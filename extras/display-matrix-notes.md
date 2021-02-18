@@ -45,7 +45,7 @@ More presentation modes are in preparation....
 Messaging Interface
 -------------------
 
-All messages always start with the <mupplet-name> as first topic part. Therefore all subsequent
+All messages always start with the `<mupplet-name>` as first topic part. Therefore all subsequent
 documentation does not mention this part.
 
 ### Display Luminosity ###
