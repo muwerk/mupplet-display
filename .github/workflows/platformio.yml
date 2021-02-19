@@ -38,7 +38,6 @@ jobs:
         pio lib -g install mupplet-core
         pio lib -g install Arduino_JSON
         pio lib -g install PubSubClient@2.7
-        pio lib -g install Wire
         pio lib -g install Adafruit BusIO
         pio lib -g install Adafruit GFX Library
         pio lib -g install SPI

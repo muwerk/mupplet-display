@@ -16,6 +16,7 @@
 // - mupplet-core
 
 #define __ESP__
+#undef __APPLE__
 // #define USE_SERIAL_DBG 1
 
 #include "ustd_platform.h"
