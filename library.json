@@ -1,0 +1,52 @@
+{
+    "name": "mupplet-display",
+    "keywords": [
+        "hardware",
+        "display",
+        "muwerk"
+    ],
+    "description": "A collection of display applets for the muwerk scheduler",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/muwerk/mupplet-display.git"
+    },
+    "authors": [
+        {
+            "name": "Leo Moll",
+            "email": "leo.moll@yeasoft.com",
+            "maintainer": true
+        },
+        {
+            "name": "Dominik Schlösser",
+            "email": "dsc@dosc.net",
+            "maintainer": true
+        }
+    ],
+    "dependencies": [
+        {
+            "name": "ustd",
+            "authors": "Dominik Schlösser, Leo Moll",
+            "frameworks": "arduino"
+        },
+        {
+            "name": "muwerk",
+            "authors": "Dominik Schlösser, Leo Moll",
+            "frameworks": "arduino"
+        },
+        {
+            "name": "mupplet-core",
+            "authors": "Dominik Schlösser, Leo Moll",
+            "frameworks": "arduino"
+        }
+    ],
+    "export": {
+        "exclude": [
+            ".github/*",
+            ".clang-format",
+            ".gitignore"
+        ]
+    },
+    "version": "0.1.0",
+    "frameworks": "arduino",
+    "platforms": "*"
+}

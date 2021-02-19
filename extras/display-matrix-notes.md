@@ -10,9 +10,9 @@ The mupplet acts as an intelligent display server supporting various commands an
 Hardware Setup
 --------------
 
-TBD
+<img src="https://github.com/muwerk/mupplet-display/blob/master/extras/Matrix-8x8-MAX7219.jpg" width="30%" height="30%">
 
-
+Hardware: WeMos D1 Mini, 3 x MAX7219 8x32 4 in 1 Dot Matrix Display Modules
 
 General Function Model
 ----------------------
