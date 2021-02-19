@@ -33,6 +33,9 @@ jobs:
       run: |
         pio lib -g install ustd
         pio lib -g install muwerk
+        pio lib -g install munet
+        pio lib -g install mufonts
+        pio lib -g install mupplet-core
     - name: Run PlatformIO
       run:
         pio ci --lib="." --board=d1_mini examples/bigMatrixClock/bigMatrixClock.ino
