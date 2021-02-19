@@ -38,10 +38,10 @@ jobs:
         pio lib -g install mupplet-core
         pio lib -g install Arduino_JSON
         pio lib -g install PubSubClient@2.7
-        pio lib -g --board=d1_mini install Wire
-        pio lib -g --board=d1_mini install "Adafruit BusIO"
-        pio lib -g --board=d1_mini install "Adafruit GFX Library"
-        pio lib -g --board=d1_mini install SPI
+        pio lib -g install Wire
+        pio lib -g install "Adafruit BusIO"
+        pio lib -g install "Adafruit GFX Library"
+        pio lib -g install SPI
     - name: Run PlatformIO
       run:
         pio ci --lib="." --board=d1_mini examples/bigMatrixClock/bigMatrixClock.ino
