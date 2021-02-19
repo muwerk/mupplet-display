@@ -3,7 +3,6 @@
 //
 // This sample depends on the following libraries:
 //
-// - SPIFFS
 // - Arduino_JSON
 // - PubSubClient@2.7
 // - Wire
@@ -13,6 +12,7 @@
 // - ustd
 // - muwerk
 // - munet
+// - mufonts
 // - mupplet-core
 
 #define __ESP__
