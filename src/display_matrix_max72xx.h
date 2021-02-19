@@ -125,12 +125,12 @@ class DisplayMatrixMAX72XX {
         sizes.add(size);
     }
 
-    // void addfont(const GFXfont *font, const char *baseLineReference = "A") {
-    //     FontSize size = {0, 0, 0, 0};
-    //     getFontSize(font, size, *baseLineReference);
-    //     fonts.add(font);
-    //     sizes.add(size);
-    // }
+    void addfont(const GFXfont *font, const char *baseLineReference = "A") {
+        FontSize size = {0, 0, 0, 0};
+        getFontSize(font, size, *baseLineReference);
+        fonts.add(font);
+        sizes.add(size);
+    }
 
     void setDefaults(Mode mode, unsigned long dur, int16_t repeat, uint8_t speed, uint8_t font) {
         default_item.mode = mode;
@@ -170,6 +170,35 @@ class DisplayMatrixMAX72XX {
         }
         if (program.length() == 0) {
             displayClear(default_item);
+        }
+    }
+
+    void changedProgramItem(ProgramItem &item) {
+        switch (item.mode) {
+        case Left:
+            displayLeft(item);
+            break;
+        case Center:
+            displayCenter(item);
+            break;
+        case Right:
+            displayRight(item);
+            break;
+        case SlideIn:
+            if (program_state == FadeIn && charPos < item.content.length() - 1) {
+                String temp = item.content;
+                item.content = item.content.substring(0, charPos);
+                displayLeft(item);
+                item.content = temp;
+                lastPos = max.getCursorX();
+                initNextCharDimensions(item);
+            } else {
+                displayLeft(item);
+                program_state = Wait;
+            }
+            break;
+        default:
+            break;
         }
     }
 
@@ -622,8 +651,7 @@ class DisplayMatrixMAX72XX {
         item.content = args;
         program[i] = item;
         if (program_counter == i) {
-            // restart the display sequence
-            program_state = None;
+            changedProgramItem(program[i]);
         }
         return i;
     }
@@ -673,8 +701,7 @@ class DisplayMatrixMAX72XX {
         }
         program[i].content = args;
         if (program_counter == i) {
-            // restart the display sequence
-            program_state = None;
+            changedProgramItem(program[i]);
         }
         return i;
     }
