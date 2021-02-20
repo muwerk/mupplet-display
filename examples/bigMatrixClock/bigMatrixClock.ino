@@ -15,8 +15,12 @@
 // - mufonts
 // - mupplet-core
 
+#ifndef __ESP__
 #define __ESP__
+#endif
+#ifdef __APPLE__
 #undef __APPLE__
+#endif
 // #define USE_SERIAL_DBG 1
 
 #include "ustd_platform.h"
@@ -46,6 +50,8 @@ bool showClock = false;
 
 void setClock(String cmd) {
     if (cmd == "on" && !showClock) {
+        // initialize slots with placeholders in order to show that the lcosk is active also if time
+        // is still unavailable
         sched.publish("matrix/display/items/time/set", "center;0;10000;16;2;--:--:--");
         sched.publish("matrix/display/items/date/set", "center;0;2000;16;2;--.--.----");
         showClock = true;
@@ -105,13 +111,17 @@ void setup() {
     // initialize core components
     con.begin(&sched, "sub net/# mqtt/# matrix/light/# matrix/display/items/#", 115200);
 
+    // initialize network services
     net.begin(&sched);
     ota.begin(&sched);
     mqtt.begin(&sched);
 
+    // initialize display
     matrix.begin(&sched);
     matrix.addfont(&muMatrix8ptRegular, 7);
     matrix.addfont(&muHeavy8ptBold, 7);
+
+    // switch display on
     sched.publish("matrix/light/set", "on");
 
     // initialize application
