@@ -34,6 +34,16 @@
             "frameworks": "arduino"
         },
         {
+            "name": "munet",
+            "authors": "Dominik Schlösser, Leo Moll",
+            "frameworks": "arduino"
+        },
+        {
+            "name": "mufonts",
+            "authors": "Dominik Schlösser, Leo Moll",
+            "frameworks": "arduino"
+        },
+        {
             "name": "mupplet-core",
             "authors": "Dominik Schlösser, Leo Moll",
             "frameworks": "arduino"
@@ -43,7 +53,8 @@
         "exclude": [
             ".github/*",
             ".clang-format",
-            ".gitignore"
+            ".gitignore",
+            "extras/ci/*"
         ]
     },
     "version": "0.1.0",

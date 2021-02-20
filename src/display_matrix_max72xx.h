@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include "max72xx.h"
 #include "ustd_array.h"
 #include "timeout.h"
 #include "muwerk.h"
 #include "helper/light_controller.h"
+#include "hardware/max72xx_matrix.h"
 
 namespace ustd {
 
