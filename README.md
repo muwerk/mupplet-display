@@ -1,4 +1,4 @@
-[![PlatformIO CI](https://github.com/muwerk/mupplet-display/workflows/PlatformIO%20CI/badge.svg)][badge_CI] [![Dev Docs](https://img.shields.io/badge/docs-dev-blue.svg)][badge_DOC]
+[![PlatformIO CI][image_CI]][badge_CI] [![Dev Docs][image_DOC]][badge_DOC]
 
 **Note:** This project, while being released, is still WIP. Additional functionality from
 [Research-mupplets](https://github.com/muwerk/Research-mupplets) is being refactored and
@@ -59,7 +59,9 @@ References
 
 
 [badge_CI]: https://github.com/muwerk/mupplet-display/actions
+[image_CI]: https://github.com/muwerk/mupplet-display/workflows/PlatformIO%20CI/badge.svg
 [badge_DOC]: https://muwerk.github.io/mupplet-display/docs/index.html
+[image_DOC]: https://img.shields.io/badge/docs-dev-blue.svg
 
 [DisplayMatrixMAX72XX_DOC]: https://muwerk.github.io/mupplet-display/docs/classustd_1_1DisplayMatrixMAX72XX.html
 [DisplayMatrixMAX72XX_NOTES]: https://github.com/muwerk/mupplet-display/blob/master/extras/display-matrix-notes.md
