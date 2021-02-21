@@ -42,7 +42,7 @@ Mupplet                     | Function | Hardware | Dependencies
 History
 -------
 
-- 0.1.0 (2021-02-XX) (Not yet Released) Single Line Matrix Display Module based on MAX72XX driver
+- 0.1.0 (2021-02-21) Single Line Matrix Display Module based on MAX72XX driver
 
 More mupplet libraries
 ----------------------
