@@ -545,15 +545,29 @@ class DisplayMatrixMAX72XX {
                 }
             } else if (operation == "get") {
                 publishItem(index);
+            } else if (operation == "jump") {
+                if (jumpItem(index)) {
+                    publishItem(index);
+                }
             } else if (operation == "clear") {
-                clearItem(index);
+                if (clearItem(index)) {
+                    publishItemsCount();
+                }
             }
         }
     }
 
     void commandContentParser(String command, String args) {
         String name, operation;
-        if (parseItemCommand(command, name, operation)) {
+        if (command == "clear") {
+            clearItems();
+            publishItemsCount();
+        } else if (command == "get") {
+            publishContents();
+        } else if (command == "add") {
+            addContent("unnamed_" + String(++anonymous_counter), args);
+            publishItemsCount();
+        } else if (parseItemCommand(command, name, operation)) {
             int16_t index = findItemByName(name.c_str());
             if (operation == "set") {
                 if (index < 0) {
@@ -566,8 +580,14 @@ class DisplayMatrixMAX72XX {
                 }
             } else if (operation == "get") {
                 publishContent(index);
+            } else if (operation == "jump") {
+                if (jumpItem(index)) {
+                    publishContent(index);
+                }
             } else if (operation == "clear") {
-                clearItem(index);
+                if (clearItem(index)) {
+                    publishItemsCount();
+                }
             }
         }
     }
@@ -708,9 +728,18 @@ class DisplayMatrixMAX72XX {
         return i;
     }
 
-    void clearItem(int16_t i) {
+    bool jumpItem(int16_t i) {
         if (i < 0 || i > (int16_t)program.length() - 1) {
-            return;
+            return false;
+        }
+        program_counter = i;
+        program_state = None;
+        return true;
+    }
+
+    bool clearItem(int16_t i) {
+        if (i < 0 || i > (int16_t)program.length() - 1) {
+            return false;
         }
         program.erase(i);
         if (program_counter > i) {
@@ -727,6 +756,7 @@ class DisplayMatrixMAX72XX {
         if (program.length() == 0) {
             displayClear(default_item);
         }
+        return true;
     }
 
     void publishItem(int16_t i) {
@@ -766,6 +796,12 @@ class DisplayMatrixMAX72XX {
             return;
         }
         pSched->publish(name + "/display/content/" + program[i].name, program[i].content);
+    }
+
+    void publishContents() {
+        for (unsigned int i = 0; i < program.length(); i++) {
+            pSched->publish(name + "/display/content/" + program[i].name, program[i].content);
+        }
     }
 
     int16_t findItemByName(const char *name) {

@@ -149,6 +149,28 @@ SEND> <mupplet-name>/display/default/set right;;3000;;
 RECV> <mupplet-name>/display/default right;1;3000;16;0
 ````
 
+### Managing Program Items ###
+
+Program Items can be managed using messages. The base hierarchy of topics used to manage program
+items is:
+
+`<mupplet-name>/display/items/`
+
+All messages in this hierarchy require the full specification of program items (See above) and also
+return full program items.
+
+A simplified management of program items is available using the base topic hierarchy:
+
+`<mupplet-name>/display/content/`
+
+In this hierarchy, only the content must be speicifed and only the content is returned. Messages
+that will generate new program items, will take all other parameters from the default settings.
+Messages that will change existing program items, will only replace the program items content.
+
+All subsequent documentation use the `items` hierarchy but the same messages are also implemented
+in the `content` topic hierarchy.
+
+
 #### Setting and Getting Program Items ####
 
 Also program items are managed following the standard get/set pattern. Program items are **named**.
@@ -196,6 +218,18 @@ RECV> <mupplet-name>/display/content/clock 17:52:06
 
 It is also possible to create content using this topic hierarchy. In this case all program item
 values are taken from the default settings.
+
+#### Jumping to Program Items ####
+
+Program items are presented in the order they are created in the program list but it is possible to
+jump directly to a program item.
+This can be achieved by sending a message with the following topic:
+
+`<mupplet-name>/display/items/<item-name>/jump`
+
+On success the system returns the current program item in the topic:
+
+`<mupplet-name>/display/items/<item-name>`
 
 #### Removing Program Items ####
 
