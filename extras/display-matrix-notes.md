@@ -1,7 +1,7 @@
 DisplayMatrixMAX72XX Mupplet
 ============================
 
-The DisplayMatrixMAX72XX Mupplet allows to control a led matrix display based on multiple 8x8 led
+The DisplayMatrixMAX72XX mupplet allows to control a led matrix display based on multiple 8x8 led
 matrix modules driven by a MAX7219 or MAX7221 connected via SPI.
 
 The mupplet acts as an intelligent display server supporting various commands and scenarios.

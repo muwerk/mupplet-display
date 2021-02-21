@@ -10,15 +10,46 @@
 
 namespace ustd {
 
+// clang-format off
+/*! \brief mupplet-display MAX7219/MAX7221 Led Matrix Display class
+
+The DisplayMatrixMAX72XX mupplet allows to control a led matrix display based on multiple 8x8 led
+matrix modules driven by a MAX7219 or MAX7221 connected via SPI.
+
+The mupplet acts as an intelligent display server supporting various commands and scenarios.
+
+## Sample mupplet Integration
+
+\code{cpp}
+#define __ESP__ 1   // Platform defines required, see ustd library doc, mainpage.
+#include "scheduler.h"
+#include "display_matrix_max72xx.h"
+
+ustd::Scheduler sched;
+ustd::DisplayMatrixMAX72XX matrix("matrix", D8, 12, 1, 1);
+
+void setup() {
+    matrix.begin(&sched);
+}
+\endcode
+
+More information:
+<a href="https://github.com/muwerk/mupplet-display/blob/master/extras/display-matrix-notes.md">DisplayMatrixMAX72XX
+Application Notes</a>
+*/
+// clang-format on
+
 class DisplayMatrixMAX72XX {
   public:
     static const char *version;  // = "0.1.0";
     static const char *modeTokens[];
+
+    /// Program Item Display Mode
     enum Mode {
-        Left,
-        Center,
-        Right,
-        SlideIn,
+        Left,     ///< Static left formatted text
+        Center,   ///< Static centered text
+        Right,    ///< Static right formatted text
+        SlideIn,  ///< Text slides in char per char to the left side
     };
 
   private:
@@ -52,7 +83,7 @@ class DisplayMatrixMAX72XX {
     String name;
 
     // hardware configuration
-    max72xx max;
+    Max72xxMatrix max;
 
     // runtime
     LightController light;
@@ -74,6 +105,19 @@ class DisplayMatrixMAX72XX {
     uint8_t charY;     // height of current char
 
   public:
+    /*! Instantiates a DisplayMatrixMAX72XX mupplet
+     *
+     * No hardware interaction is performed, until \ref begin() is called.
+     *
+     * @param name Name of the led, used to reference it by pub/sub messages
+     * @param csPin     The chip select pin. (default: D8)
+     * @param hDisplays Horizontal number of 8x8 display units. (default: 1)
+     * @param vDisplays Vertical number of 8x8 display units. (default: 1)
+     * @param rotation  Define if and how the displays are rotated. The first display
+     *                  is the one closest to the Connections. `rotation` can be a numeric value
+     *                  from 0 to 3 representing respectively no rotation, 90 degrees clockwise, 180
+     *                  degrees and 90 degrees counter clockwise.
+     */
     DisplayMatrixMAX72XX(String name, uint8_t csPin = D8, uint8_t hDisplays = 1,
                          uint8_t vDisplays = 1, uint8_t rotation = 0)
         : name(name), max(csPin, hDisplays, vDisplays, rotation), fonts(4, ARRAY_MAX_SIZE, 4) {
@@ -82,6 +126,11 @@ class DisplayMatrixMAX72XX {
         sizes.add(default_size);
     }
 
+    /*! Initialize the display hardware and start operation
+     * @param _pSched       Pointer to a muwerk scheduler object, used to create worker
+     *                      tasks and for message pub/sub.
+     * @param initialState  Initial logical state of the display: false=off, true=on.
+     */
     void begin(Scheduler *_pSched, bool initialState = false) {
         pSched = _pSched;
         tID = pSched->add([this]() { this->loop(); }, name, 10000L);
@@ -107,8 +156,6 @@ class DisplayMatrixMAX72XX {
 
         // prepare hardware
         max.begin();
-        max.fillScreen(0);
-        max.write();
         max.setPowerSave(false);
         max.setIntensity(8);
 
@@ -118,6 +165,10 @@ class DisplayMatrixMAX72XX {
                     initialState);
     }
 
+    /*! Adds an Adafruit GFX font to the display mupplet
+     * @param font      The Adafruit GFXfont object
+     * @param baseLine  The baseline value of the selected font
+     */
     void addfont(const GFXfont *font, uint8_t baseLine) {
         FontSize size = {baseLine, 0, 0, 0};
         getFontSize(font, size);
@@ -125,6 +176,11 @@ class DisplayMatrixMAX72XX {
         sizes.add(size);
     }
 
+    /*! Adds an Adafruit GFX font to the display mupplet
+     * @param font              The Adafruit GFXfont object
+     * @param baseLineReference The reference char used to determine the baseline value of the
+     *                          selected font
+     */
     void addfont(const GFXfont *font, const char *baseLineReference = "A") {
         FontSize size = {0, 0, 0, 0};
         getFontSize(font, size, *baseLineReference);
@@ -132,6 +188,13 @@ class DisplayMatrixMAX72XX {
         sizes.add(size);
     }
 
+    /*! Set the internal default values for program items
+     * @param mode      Display mode of the program item
+     * @param dur       Duration in milliseconds of the program item
+     * @param repeat    Number of repetitions for the program item. Set `0` for infinite repetitions
+     * @param speed     Effect speed of the program item. Value range: 1 (slow) to 16 (fast)
+     * @param font      Font index of program item. Set `0` for builtin font.
+     */
     void setDefaults(Mode mode, unsigned long dur, int16_t repeat, uint8_t speed, uint8_t font) {
         default_item.mode = mode;
         default_item.duration = dur;
@@ -140,6 +203,8 @@ class DisplayMatrixMAX72XX {
         default_item.speed = speed > 16 ? 16 : speed;
     }
 
+    /*! Remove all program items
+     */
     void clearItems() {
         program.erase();
         program_counter = 0;
@@ -407,6 +472,13 @@ class DisplayMatrixMAX72XX {
             light.set(true);
         } else if (command == "off") {
             light.set(false);
+            // } else if (command == "testmode") {
+            //     max.setTestMode(args == "on");
+            // } else if (command == "intensity") {
+            //     max.setIntensity(parseRangedLong(args, 0, 15, 0, 15));
+            // } else if (command == "zerofill") {
+            //     max.fillScreen(0);
+            //     max.write();
         }
     }
 
@@ -502,27 +574,7 @@ class DisplayMatrixMAX72XX {
 
     void commandValueParser(String command, String args) {
     }
-    /*
-            if (command == "KAKAK") {
-            } else             } else if (command == "content/add") {
-                addContent("unnamed_" + String(++anonymous_counter), args);
-                pSched->publish(name + "/display/items/count", String(program.length()));
-            } else if (command == "on") {
-                light.set(true);
-            } else if (command == "off") {
-                light.set(false);
-            } else {
-                String name, operation;
-                if (parseItemCommand(command, name, operation)) {
-                    if (operation == "set") {
-                    } else if (operation == "get") {
-                    } else if (operation == "clear") {
-                    } else if (operation == "clear") {
-                    }
-                }
-            }
-        }
-    */
+
     bool parseItemCommand(String command, String &name, String &operation) {
         const char *pPtr = command.c_str();
         const char *pOperation = strrchr(pPtr, '/');
@@ -671,6 +723,9 @@ class DisplayMatrixMAX72XX {
             if (program_counter >= program.length()) {
                 program_counter = 0;
             }
+        }
+        if (program.length() == 0) {
+            displayClear(default_item);
         }
     }
 
