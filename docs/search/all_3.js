@@ -10,6 +10,7 @@ var searchData=
   ['digit6_11',['digit6',['../classustd_1_1Max72XX.html#a088b2177d58815fcfb7d30d7710ecc26a00bd6a188c194f66d497e61882c319f0',1,'ustd::Max72XX']]],
   ['digit7_12',['digit7',['../classustd_1_1Max72XX.html#a088b2177d58815fcfb7d30d7710ecc26a6047e3534f31045a8736b160a4a7b63b',1,'ustd::Max72XX']]],
   ['displaymatrixmax72xx_13',['DisplayMatrixMAX72XX',['../classustd_1_1DisplayMatrixMAX72XX.html#aa9ca29880e0591137d35a9c7fec337a7',1,'ustd::DisplayMatrixMAX72XX::DisplayMatrixMAX72XX()'],['../classustd_1_1DisplayMatrixMAX72XX.html',1,'ustd::DisplayMatrixMAX72XX']]],
-  ['displaytest_14',['displaytest',['../classustd_1_1Max72XX.html#a088b2177d58815fcfb7d30d7710ecc26a6a8a834dfe17cca968018485329fe619',1,'ustd::Max72XX']]],
-  ['drawpixel_15',['drawPixel',['../classustd_1_1Max72xxMatrix.html#a8f95e13b21206f01b033ccce953f3ad0',1,'ustd::Max72xxMatrix']]]
+  ['displaymatrixmax72xx_20mupplet_14',['DisplayMatrixMAX72XX Mupplet',['../md_extras_display_matrix_notes.html',1,'']]],
+  ['displaytest_15',['displaytest',['../classustd_1_1Max72XX.html#a088b2177d58815fcfb7d30d7710ecc26a6a8a834dfe17cca968018485329fe619',1,'ustd::Max72XX']]],
+  ['drawpixel_16',['drawPixel',['../classustd_1_1Max72xxMatrix.html#a8f95e13b21206f01b033ccce953f3ad0',1,'ustd::Max72xxMatrix']]]
 ];
