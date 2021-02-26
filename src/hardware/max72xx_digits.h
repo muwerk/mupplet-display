@@ -3,7 +3,6 @@
 #pragma once
 
 #include "max72xx.h"
-#include "muwerk.h"
 #include "mupplet_core.h"
 
 namespace ustd {
@@ -128,12 +127,15 @@ class Max72xxDigits : public Print {
     void write() {
         if (bitmap != nullptr) {
             for (uint8_t digit = 0; digit < length; digit++) {
+                uint16_t endOffset = digit;
+                uint16_t startOffset = bitmapSize + endOffset;
                 uint8_t *pPtr = outputBuffer;
-                for (uint8_t unit = 0; unit < driver.getChainLen(); unit++) {
+                do {
+                    startOffset -= length;
                     pPtr[0] = Max72XX::digit0 + length - digit - 1;
-                    pPtr[1] = bitmap[unit * _width + digit];
+                    pPtr[1] = bitmap[startOffset];
                     pPtr += 2;
-                }
+                } while (startOffset > endOffset);
                 driver.sendBlock(outputBuffer, pPtr - outputBuffer);
             }
         }
