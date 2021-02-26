@@ -68,8 +68,8 @@ class Max72xxMatrix : public Adafruit_GFX {
             // Initialize hardware
             driver.begin();
             driver.setTestMode(false);
-            driver.setScanLimit(7);
-            driver.setDecodeMode(0);
+            driver.setScanLimit(8);
+            driver.setDecodeMode(B00000000);
 
             // Clear the display
             fillScreen(0);
