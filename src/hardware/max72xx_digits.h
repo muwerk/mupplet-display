@@ -51,7 +51,7 @@ class Max72xxDigits : public Print {
      */
     Max72xxDigits(uint8_t csPin = D8, uint8_t hDisplays = 1, uint8_t vDisplays = 1,
                   uint8_t length = 8)
-        : driver(csPin, hDisplays * vDisplays), length(length) {
+        : driver(csPin, hDisplays * vDisplays), length(length > 8 ? 8 : length) {
         bitmapSize = hDisplays * vDisplays * length;
         bitmap = (uint8_t *)malloc(bitmapSize + (hDisplays * vDisplays * 2));
         outputBuffer = bitmap + bitmapSize;
@@ -73,7 +73,7 @@ class Max72xxDigits : public Print {
             driver.setDecodeMode(B00000000);
 
             // Clear the display
-            clearScreen();
+            fillScreen(0);
             write();
         }
     }
@@ -110,12 +110,131 @@ class Max72xxDigits : public Print {
         cursor_y = y;
     }
 
+    /*! Set text cursor X location
+     * @param x X coordinate in digit positions
+     */
+    inline void setCursorX(int16_t x) {
+        cursor_x = x;
+    }
+
+    /*! Set text cursor Y location
+     * @param y Y coordinate in digit positions
+     */
+    inline void setCursorY(int16_t y) {
+        cursor_y = y;
+    }
+
     /*! Set whether text that is too long for the screen width should
-            automatically wrap around to the next line (else clip right).
+     *      automatically wrap around to the next line (else clip right).
      * @param w true for wrapping, false for clipping
      */
     void setTextWrap(bool w) {
         wrap = w;
+    }
+
+    /*! Fill a rectangle completely with one pattern.
+     *
+     * @param x         Top left corner x coordinate
+     * @param y         Top left corner y coordinate
+     * @param w         Width in digit positions
+     * @param h         Height in digit positions
+     * @param pattern   Pattern to fill the area with
+     */
+    void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint8_t pattern = B00000000) {
+        x = x < 0 ? 0 : x >= _width ? _width - 1 : x;
+        y = y < 0 ? 0 : y >= _height ? _height - 1 : y;
+        w = w < 0 ? 0 : w >= _width - x ? _width - x : w;
+        h = h < 0 ? 0 : h >= _height - y ? _height - y : h;
+
+        for (int16_t yy = y; yy < y + h; yy++) {
+            memset(bitmap + yy * _width + x, pattern, w);
+        }
+    }
+
+    /*! Prints a text at a specified location with a specified formatting
+     *
+     * This method prints a text at the specified location with the specified length using left,
+     * right or centered alignment. All parameters are checked for plasibility and will be adapted
+     * to the current display size.
+     *
+     * @param x         Top left corner x coordinate
+     * @param y         Top left corner y coordinate
+     * @param w         Width in digit positions
+     * @param align     Alignment of the string to display: 0 = left, 1 = center, 2 = right
+     * @param content   The string to print
+     */
+    void printFormatted(int16_t x, int16_t y, int16_t w, int16_t align, String content) {
+        uint8_t shadowBuffer[8];
+        x = x < 0 ? 0 : x >= _width ? _width - 1 : x;
+        y = y < 0 ? 0 : y >= _height ? _height - 1 : y;
+        w = w < 0 ? 0 : w >= _width - x ? _width - x : w;
+        memset(bitmap + y * _width + x, B00000000, w);
+        uint8_t *pDst = shadowBuffer;
+        const unsigned char *pSrc = (unsigned char *)content.c_str();
+        while (pDst < shadowBuffer + 8 && *pSrc) {
+            if (*pSrc < 32) {
+                pDst--;
+            } else if (*pSrc == '.' || *pSrc == ',') {
+                if (pDst == shadowBuffer) {
+                    *pDst = B10000000;
+                } else {
+                    pDst--;
+                    *pDst |= B10000000;
+                }
+            } else if (*pSrc == ' ') {
+                *pDst = B00000000;
+            } else if (*pSrc == '-') {
+                *pDst = B00000001;
+            } else if (*pSrc == '_') {
+                *pDst = B00001000;
+            } else if (*pSrc == '=') {
+                *pDst = B00001001;
+            } else if (*pSrc >= '0' && *pSrc <= '9') {
+                *pDst = pgm_read_byte_near(digitTable7Seg + *pSrc - '0');
+            } else if (*pSrc >= 'A' && *pSrc <= 'Z') {
+                *pDst = pgm_read_byte_near(charTable7Seg + *pSrc - 'A');
+            } else if (*pSrc >= 'a' && *pSrc <= 'z') {
+                *pDst = pgm_read_byte_near(charTable7Seg + *pSrc - 'a');
+            } else {
+                *pDst = B00001000;
+            }
+            pSrc++;
+            pDst++;
+        }
+        int16_t size = pDst - shadowBuffer;
+        int16_t offs = 0;
+        pDst = bitmap + (y * length) + x;  // fist position of the destination slot
+        switch (align) {
+        default:
+        case 0:
+            // left
+            memcpy(pDst, shadowBuffer, min(w, size));
+            break;
+        case 1:
+            // center
+            if (w < size) {
+                // string is larger than slot size - display only middle part
+                offs = (size - w) / 2;
+                memcpy(pDst, shadowBuffer + offs, w);
+            } else {
+                // string is smaller than slot size - display center aligned
+                offs = (w - size) / 2;
+                memcpy(pDst + offs, shadowBuffer, size);
+            }
+            break;
+        case 2:
+            // right
+            if (w < size) {
+                // string is larger than slot size - display only last part
+                offs = size - w;
+                memcpy(pDst, shadowBuffer + offs, w);
+            } else {
+                // string is smaller than slot size - display right aligned
+                offs = w - size;
+                memcpy(pDst + offs, shadowBuffer, size);
+            }
+            break;
+        }
     }
 
     /*! Flushes the frame buffer to the display
@@ -142,11 +261,11 @@ class Max72xxDigits : public Print {
     }
 
     /*! Empty the frame buffer
-     * @param  color Binary (on or off) color to fill with
+     * @param pattern Binary (on or off) pattern to fill with
      */
-    virtual void clearScreen() {
+    virtual void fillScreen(uint8_t pattern) {
         if (bitmap != nullptr) {
-            memset(bitmap, 0, length * driver.getChainLen());
+            memset(bitmap, pattern, length * driver.getChainLen());
             cursor_x = 0;
             cursor_y = 0;
         }
@@ -166,6 +285,13 @@ class Max72xxDigits : public Print {
         return _height;
     }
 
+    /*! Returns if too long text will be wrapped to the next line
+     * @returns Wrapping mode
+     */
+    inline bool getTextWrap() const {
+        return wrap;
+    }
+
     /*! Get text cursor X location
      * @returns X coordinate in digit positions
      */
@@ -179,6 +305,19 @@ class Max72xxDigits : public Print {
     inline int16_t getCursorY() const {
         return cursor_y;
     };
+
+    /*! Calculates the length in digits of a char
+     * @param c         The ASCII character in question
+     * @param firstChar Set to true, if this is the first chat of a sequence (default: false)
+     */
+    uint8_t getCharLen(unsigned char c, bool firstChar = false) {
+        if (c < 32) {
+            return 0;
+        } else if (c == '.' || c == ',') {
+            return firstChar ? 1 : 0;
+        }
+        return 1;
+    }
 
   protected:
     virtual size_t write(uint8_t c) {
@@ -198,47 +337,37 @@ class Max72xxDigits : public Print {
         }
         if (cursor_x < 0 || cursor_y < 0) {
             // out of viewport but we must increment when char is prinatble
-            if (strchr(" .,-_=", c)) {
-                cursor_x++;
-            } else if (c >= '0' && c <= '9') {
-                cursor_x++;
-            } else if (c >= 'A' && c <= 'Z') {
-                cursor_x++;
-            } else if (c >= 'a' && c <= 'z') {
-                cursor_x++;
-            }
+            cursor_x += getCharLen(c, cursor_x == 0);
             return 1;
         }
         uint8_t index = cursor_y * _width + cursor_x;
-        if (c == '.' || c == ',') {
+        if (c < 32) {
+            return 1;
+        } else if (c == '.' || c == ',') {
             if (cursor_x == 0) {
                 bitmap[index] = B10000000;
-                cursor_x++;
             } else {
                 bitmap[index - 1] |= B10000000;
+                cursor_x--;
             }
         } else if (c == ' ') {
             bitmap[index] = B00000000;
-            cursor_x++;
         } else if (c == '-') {
             bitmap[index] = B00000001;
-            cursor_x++;
         } else if (c == '_') {
             bitmap[index] = B00001000;
-            cursor_x++;
         } else if (c == '=') {
             bitmap[index] = B00001001;
-            cursor_x++;
         } else if (c >= '0' && c <= '9') {
             bitmap[index] = pgm_read_byte_near(digitTable7Seg + c - '0');
-            cursor_x++;
         } else if (c >= 'A' && c <= 'Z') {
             bitmap[index] = pgm_read_byte_near(charTable7Seg + c - 'A');
-            cursor_x++;
         } else if (c >= 'a' && c <= 'z') {
             bitmap[index] = pgm_read_byte_near(charTable7Seg + c - 'a');
-            cursor_x++;
+        } else {
+            bitmap[index] = B00001000;
         }
+        cursor_x++;
         return 1;
     }
 };
