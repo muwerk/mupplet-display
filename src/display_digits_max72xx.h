@@ -5,23 +5,16 @@
 #include "ustd_array.h"
 #include "muwerk.h"
 #include "helper/light_controller.h"
+#include "helper/mup_display.h"
 #include "hardware/max72xx_digits.h"
 
 namespace ustd {
 
-class DisplayDigitsMAX72XX {
+class DisplayDigitsMAX72XX : public MuppletDisplay {
   public:
     static const char *version;  // = "0.1.0";
-    static const char *formatTokens[];
 
   private:
-    // muwerk task management
-    Scheduler *pSched;
-    int tID;
-
-    // device configuration
-    String name;
-
     // hardware configuration
     Max72xxDigits max;
 
@@ -41,7 +34,7 @@ class DisplayDigitsMAX72XX {
      */
     DisplayDigitsMAX72XX(String name, uint8_t csPin = D8, uint8_t hDisplays = 1,
                          uint8_t vDisplays = 1, uint8_t length = 8)
-        : name(name), max(csPin, hDisplays, vDisplays, length) {
+        : MuppletDisplay(name), max(csPin, hDisplays, vDisplays, length) {
     }
 
     /*! Initialize the display hardware and start operation
@@ -75,120 +68,6 @@ class DisplayDigitsMAX72XX {
         light.loop();
     }
 
-    bool commandParser(String command, String args, String topic) {
-        if (command.startsWith("cmnd/")) {
-            return commandCmdParser(command.substring(5), args);
-        } else if (command.startsWith("cursor/")) {
-            return cursorParser(command.substring(7), args, topic + "/cursor");
-        } else if (command.startsWith("wrap/")) {
-            return wrapParser(command.substring(5), args, topic + "/wrap");
-        }
-        return false;
-    }
-
-    bool cursorParser(String command, String args, String topic) {
-        if (command == "get") {
-            pSched->publish(topic, String(max.getCursorX()) + ";" + String(max.getCursorY()));
-            return true;
-        } else if (command == "set") {
-            max.setCursor(
-                parseRangedLong(shift(args, ';'), 0, max.width() - 1, 0, max.width() - 1),
-                parseRangedLong(shift(args, ';'), 0, max.height() - 1, 0, max.height() - 1));
-            pSched->publish(topic, String(max.getCursorX()) + ";" + String(max.getCursorY()));
-            return true;
-        } else if (command == "x/get") {
-            pSched->publish(topic + "/x", String(max.getCursorX()));
-            return true;
-        } else if (command == "x/set") {
-            max.setCursorX(
-                parseRangedLong(shift(args, ';'), 0, max.width() - 1, 0, max.width() - 1));
-            pSched->publish(topic + "/x", String(max.getCursorX()));
-            return true;
-        } else if (command == "y/get") {
-            pSched->publish(topic + "/x", String(max.getCursorY()));
-            return true;
-        } else if (command == "y/set") {
-            max.setCursorX(
-                parseRangedLong(shift(args, ';'), 0, max.height() - 1, 0, max.height() - 1));
-            pSched->publish(topic + "/x", String(max.getCursorY()));
-            return true;
-        }
-        return false;
-    }
-
-    bool wrapParser(String command, String args, String topic) {
-        if (command == "get") {
-            pSched->publish(topic, max.getTextWrap() ? "on" : "off");
-            return true;
-        } else if (command == "set") {
-            int8_t wrap = parseBoolean(args);
-            if (wrap >= 0) {
-                max.setTextWrap(wrap == 1);
-                pSched->publish(topic, max.getTextWrap() ? "on" : "off");
-                return true;
-            }
-        }
-        return false;
-    }
-
-    bool commandCmdParser(String command, String args) {
-        int16_t x, y, w, h;
-        array<String> params;
-        if (command == "clear") {
-            if (args.length()) {
-                split(args, ';', params);
-            }
-            switch (params.length()) {
-            case 0:
-                // clear the whole screen
-                displayClear();
-                return true;
-            case 1:
-                // clear the specified line
-                y = parseLong(params[0], 0);
-                max.fillRect(0, y, max.width(), 1, 0);
-                max.write();
-                return true;
-            case 2:
-                // clear the rect from specified coordinates
-                x = parseLong(params[0], 0);
-                y = parseLong(params[1], 0);
-                max.fillRect(x, y, max.width(), max.height(), 0);
-                max.write();
-                return true;
-            case 4:
-                // clear the rect with specified coordinates and size
-                x = parseLong(params[0], 0);
-                y = parseLong(params[1], 0);
-                w = parseLong(params[2], 0);
-                h = parseLong(params[3], 0);
-                max.fillRect(x, y, w, h, 0);
-                max.write();
-                return true;
-            }
-        } else if (command == "print") {
-            max.print(args);
-            max.write();
-        } else if (command == "println") {
-            max.println(args);
-            max.write();
-        } else if (command == "printat") {
-            x = parseRangedLong(shift(args, ';', "0"), 0, max.width() - 1, 0, max.width() - 1);
-            y = parseRangedLong(shift(args, ';', "0"), 0, max.height() - 1, 0, max.height() - 1);
-            max.setCursor(x, y);
-            max.print(args);
-            max.write();
-        } else if (command == "format") {
-            x = parseLong(shift(args, ';', ""), 0);
-            y = parseLong(shift(args, ';', ""), 0);
-            w = parseLong(shift(args, ';', ""), 0);
-            h = parseToken(shift(args, ';', "left"), formatTokens);
-            max.printFormatted(x, y, w, h, args);
-            max.write();
-        }
-        return false;
-    }
-
     void onLightControl(bool state, double level, bool control, bool notify) {
         uint8_t intensity = (level * 15000) / 1000;
         if (control) {
@@ -203,25 +82,69 @@ class DisplayDigitsMAX72XX {
         }
     }
 
-    void displayClear(bool flush = true) {
-        max.fillScreen(0);
-        max.setCursor(0, 0);
+    virtual void getDimensions(int16_t &width, int16_t &height) {
+        width = max.width();
+        height = max.height();
+    }
+
+    virtual bool getTextWrap() {
+        return max.getTextWrap();
+    }
+
+    virtual void setTextWrap(bool wrap) {
+        max.setTextWrap(wrap);
+    }
+
+    virtual uint8_t getTextFont() {
+        return 0;
+    }
+
+    virtual FontSize getTextFontSize() {
+        FontSize retVal;
+        retVal.baseLine = 0;
+        retVal.xAdvance = 1;
+        retVal.yAdvance = 1;
+        return retVal;
+    }
+
+    virtual void setTextFont(uint8_t font) {
+    }
+
+    virtual void getCursor(int16_t &x, int16_t &y) {
+        x = max.getCursorX();
+        y = max.getCursorY();
+    }
+
+    virtual void setCursor(int16_t x, int16_t y) {
+        max.setCursor(x, y);
+    }
+
+    virtual void displayClear(int16_t x, int16_t y, int16_t w, int16_t h, bool flush = true) {
+        max.fillRect(x, y, w, h);
         if (flush) {
             max.write();
         }
     }
 
-    int16_t getTextWidth(const char *str) {
-        uint8_t c;  // Current character
-        int16_t len = 0;
-        while ((c = *str++)) {
-            len += max.getCharLen(c);
+    virtual void displayPrint(String content, bool ln = false, bool flush = true) {
+        if (ln) {
+            max.println(content);
+        } else {
+            max.print(content);
         }
-        return len;
+        if (flush) {
+            max.write();
+        }
+    }
+    virtual void displayFormat(int16_t x, int16_t y, int16_t w, int16_t align, String content,
+                               bool flush = true) {
+        max.printFormatted(x, y, w, align, content);
+        if (flush) {
+            max.write();
+        }
     }
 };
 
 const char *DisplayDigitsMAX72XX::version = "0.1.0";
-const char *DisplayDigitsMAX72XX::formatTokens[] = {"left", "center", "right", nullptr};
 
 }  // namespace ustd
