@@ -44,13 +44,12 @@ class Max72xxDigits : public Print {
   public:
     /*! Instantiate a Max72xxDigits instance
      *
-     * @param csPin     The chip select pin. (default: D8)
+     * @param csPin     The chip select pin.
      * @param hDisplays Horizontal number of display units. (default: 1)
      * @param vDisplays Vertical number of display units. (default: 1)
      * @param length    Number of digits per unit (default: 8)
      */
-    Max72xxDigits(uint8_t csPin = D8, uint8_t hDisplays = 1, uint8_t vDisplays = 1,
-                  uint8_t length = 8)
+    Max72xxDigits(uint8_t csPin, uint8_t hDisplays = 1, uint8_t vDisplays = 1, uint8_t length = 8)
         : driver(csPin, hDisplays * vDisplays), length(length > 8 ? 8 : length) {
         bitmapSize = hDisplays * vDisplays * length;
         bitmap = (uint8_t *)malloc(bitmapSize + (hDisplays * vDisplays * 2));
@@ -162,8 +161,9 @@ class Max72xxDigits : public Print {
      * @param w         Width in digit positions
      * @param align     Alignment of the string to display: 0 = left, 1 = center, 2 = right
      * @param content   The string to print
+     * @return          `true` if the string fits the defined space, `false` if output was truncated
      */
-    void printFormatted(int16_t x, int16_t y, int16_t w, int16_t align, String content) {
+    bool printFormatted(int16_t x, int16_t y, int16_t w, int16_t align, String content) {
         uint8_t shadowBuffer[8];
         x = x < 0 ? 0 : x >= _width ? _width - 1 : x;
         y = y < 0 ? 0 : y >= _height ? _height - 1 : y;
@@ -235,6 +235,7 @@ class Max72xxDigits : public Print {
             }
             break;
         }
+        return *pSrc == 0 && size <= w;
     }
 
     /*! Flushes the frame buffer to the display

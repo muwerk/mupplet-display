@@ -43,14 +43,15 @@ class MuppletDisplay {
     }
 
     bool commandCmdParser(String command, String args) {
-        int16_t x, y, w, h, width, height;
+        int16_t x, y, w, h, d, width, height;
+        FontSize fs;
         array<String> params;
         if (command == "clear") {
             if (args.length()) {
                 split(args, ';', params);
             }
             getDimensions(width, height);
-            FontSize fs = getTextFontSize();
+            fs = getTextFontSize();
             switch (params.length()) {
             case 0:
                 // clear the whole screen
@@ -97,8 +98,30 @@ class MuppletDisplay {
             getDimensions(width, height);
             x = parseLong(shift(args, ';', ""), 0);
             y = parseLong(shift(args, ';', ""), 0);
-            w = parseLong(shift(args, ';', ""), width);
             h = parseToken(shift(args, ';', "left"), formatTokens);
+            if (h == 3) {
+                // float mode
+                String size = shift(args, ';');
+                w = parseLong(shift(size, '.', ""), width);
+                d = parseRangedLong(size, 0, w, 0, w);
+                if (args.length() == 0) {
+                    // empty value - blank out area
+                    fs = getTextFontSize();
+                    displayClear(x, y, w, fs.yAdvance);
+                } else if (!isNumber(args.c_str())) {
+                    // not a Number
+                    displayError(x, y, w, 2);
+                } else {
+                    args = String(atof(args.c_str()), d);
+                    if (!displayFormat(x, y, w, 2, args)) {
+                        // overflow
+                        displayError(x, y, w, 2);
+                    }
+                    return true;
+                }
+                return true;
+            }
+            w = parseLong(shift(args, ';', ""), width);
             displayFormat(x, y, w, h, args);
             return true;
         }
@@ -158,6 +181,37 @@ class MuppletDisplay {
         return false;
     }
 
+    bool isNumber(const char *value, bool integer = false) {
+        if (!value) {
+            return false;
+        }
+        if (*value == '-') {
+            value++;
+        }
+        bool decimalpoint = false;
+        while (*value) {
+            if (*value < '0' || *value > '9') {
+                if (integer || decimalpoint || *value != '.') {
+                    return false;
+                } else {
+                    decimalpoint = true;
+                }
+            }
+            value++;
+        }
+        return true;
+    }
+
+    void displayError(int16_t x, int16_t y, int16_t w, int16_t align) {
+        if (w >= 5) {
+            displayFormat(x, y, w, align, "Error");
+        } else if (w >= 3) {
+            displayFormat(x, y, w, align, "Err");
+        } else {
+            displayFormat(x, y, w, align, "E");
+        }
+    }
+
     virtual void getDimensions(int16_t &width, int16_t &height) = 0;
     virtual bool getTextWrap() = 0;
     virtual void setTextWrap(bool wrap) = 0;
@@ -168,10 +222,10 @@ class MuppletDisplay {
     virtual void setCursor(int16_t x, int16_t y) = 0;
     virtual void displayClear(int16_t x, int16_t y, int16_t w, int16_t h, bool flush = true) = 0;
     virtual void displayPrint(String content, bool ln = false, bool flush = true) = 0;
-    virtual void displayFormat(int16_t x, int16_t y, int16_t w, int16_t align, String content,
+    virtual bool displayFormat(int16_t x, int16_t y, int16_t w, int16_t align, String content,
                                bool flush = true) = 0;
 };
 
-const char *MuppletDisplay::formatTokens[] = {"left", "center", "right", nullptr};
+const char *MuppletDisplay::formatTokens[] = {"left", "center", "right", "number", nullptr};
 
 }  // namespace ustd

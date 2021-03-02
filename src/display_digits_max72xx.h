@@ -16,7 +16,7 @@ class DisplayDigitsMAX72XX : public MuppletDisplay {
 
   private:
     // hardware configuration
-    Max72xxDigits max;
+    Max72xxDigits display;
 
     // runtime
     LightController light;
@@ -27,14 +27,14 @@ class DisplayDigitsMAX72XX : public MuppletDisplay {
      * No hardware interaction is performed, until \ref begin() is called.
      *
      * @param name Name of the led, used to reference it by pub/sub messages
-     * @param csPin     The chip select pin. (default: D8)
+     * @param csPin     The chip select pin.
      * @param hDisplays Horizontal number of display units. (default: 1)
      * @param vDisplays Vertical number of display units. (default: 1)
      * @param length    Number of digits per unit (default: 8)
      */
-    DisplayDigitsMAX72XX(String name, uint8_t csPin = D8, uint8_t hDisplays = 1,
-                         uint8_t vDisplays = 1, uint8_t length = 8)
-        : MuppletDisplay(name), max(csPin, hDisplays, vDisplays, length) {
+    DisplayDigitsMAX72XX(String name, uint8_t csPin, uint8_t hDisplays = 1, uint8_t vDisplays = 1,
+                         uint8_t length = 8)
+        : MuppletDisplay(name), display(csPin, hDisplays, vDisplays, length) {
     }
 
     /*! Initialize the display hardware and start operation
@@ -54,8 +54,8 @@ class DisplayDigitsMAX72XX : public MuppletDisplay {
         });
 
         // prepare hardware
-        max.begin();
-        max.setTextWrap(false);
+        display.begin();
+        display.setTextWrap(false);
 
         // start light controller
         light.begin([this](bool state, double level, bool control,
@@ -71,10 +71,10 @@ class DisplayDigitsMAX72XX : public MuppletDisplay {
     void onLightControl(bool state, double level, bool control, bool notify) {
         uint8_t intensity = (level * 15000) / 1000;
         if (control) {
-            max.setIntensity(intensity);
+            display.setIntensity(intensity);
         }
         if (control) {
-            max.setPowerSave(!state);
+            display.setPowerSave(!state);
         }
         if (notify) {
             pSched->publish(name + "/light/unitbrightness", String(level, 3));
@@ -83,16 +83,16 @@ class DisplayDigitsMAX72XX : public MuppletDisplay {
     }
 
     virtual void getDimensions(int16_t &width, int16_t &height) {
-        width = max.width();
-        height = max.height();
+        width = display.width();
+        height = display.height();
     }
 
     virtual bool getTextWrap() {
-        return max.getTextWrap();
+        return display.getTextWrap();
     }
 
     virtual void setTextWrap(bool wrap) {
-        max.setTextWrap(wrap);
+        display.setTextWrap(wrap);
     }
 
     virtual uint8_t getTextFont() {
@@ -111,37 +111,38 @@ class DisplayDigitsMAX72XX : public MuppletDisplay {
     }
 
     virtual void getCursor(int16_t &x, int16_t &y) {
-        x = max.getCursorX();
-        y = max.getCursorY();
+        x = display.getCursorX();
+        y = display.getCursorY();
     }
 
     virtual void setCursor(int16_t x, int16_t y) {
-        max.setCursor(x, y);
+        display.setCursor(x, y);
     }
 
     virtual void displayClear(int16_t x, int16_t y, int16_t w, int16_t h, bool flush = true) {
-        max.fillRect(x, y, w, h);
+        display.fillRect(x, y, w, h);
         if (flush) {
-            max.write();
+            display.write();
         }
     }
 
     virtual void displayPrint(String content, bool ln = false, bool flush = true) {
         if (ln) {
-            max.println(content);
+            display.println(content);
         } else {
-            max.print(content);
+            display.print(content);
         }
         if (flush) {
-            max.write();
+            display.write();
         }
     }
-    virtual void displayFormat(int16_t x, int16_t y, int16_t w, int16_t align, String content,
+    virtual bool displayFormat(int16_t x, int16_t y, int16_t w, int16_t align, String content,
                                bool flush = true) {
-        max.printFormatted(x, y, w, align, content);
+        bool ret = display.printFormatted(x, y, w, align, content);
         if (flush) {
-            max.write();
+            display.write();
         }
+        return ret;
     }
 };
 
