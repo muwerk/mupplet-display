@@ -1,3 +1,9 @@
+#!/usr/bin/env python3
+
+# Use this script to generate a table with mappings
+# of HD44780 code to UTF8-strings
+
+
 hdmap1 = "→←"
 hdmap2 = "。「」、・ヲァィゥェォャュョッ"\
     "ーアイウエオカキクケコサシスセソ"\
