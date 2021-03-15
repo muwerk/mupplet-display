@@ -6,6 +6,7 @@
 #include "timeout.h"
 #include "muwerk.h"
 #include "helper/light_controller.h"
+#include "helper/mup_gfx_display.h"
 #include "hardware/max72xx_matrix.h"
 
 namespace ustd {
@@ -39,6 +40,166 @@ Application Notes</a>
 */
 // clang-format on
 
+class DisplayMatrixMAX72XX : public MuppletGfxDisplay {
+  public:
+    static const char *version;  // = "0.1.0";
+
+  private:
+    // hardware configuration
+    Max72xxMatrix display;
+
+    // runtime
+    LightController light;
+
+  public:
+    /*! Instantiates a DisplayMatrixMAX72XX mupplet
+     *
+     * No hardware interaction is performed, until \ref begin() is called.
+     *
+     * @param name      Name of the display, used to reference it by pub/sub messages
+     * @param csPin     The chip select pin.
+     * @param hDisplays Horizontal number of 8x8 display units. (default: 1)
+     * @param vDisplays Vertical number of 8x8 display units. (default: 1)
+     * @param rotation  Define if and how the displays are rotated. The first display
+     *                  is the one closest to the Connections. `rotation` can be a numeric value
+     *                  from 0 to 3 representing respectively no rotation, 90 degrees clockwise, 180
+     *                  degrees and 90 degrees counter clockwise.
+     */
+    DisplayMatrixMAX72XX(String name, uint8_t csPin, uint8_t hDisplays = 1, uint8_t vDisplays = 1,
+                         uint8_t rotation = 0)
+        : MuppletGfxDisplay(name), display(csPin, hDisplays, vDisplays, rotation) {
+    }
+
+    /*! Initialize the display hardware and start operation
+     * @param _pSched       Pointer to a muwerk scheduler object, used to create worker
+     *                      tasks and for message pub/sub.
+     * @param initialState  Initial logical state of the display: false=off, true=on.
+     */
+    void begin(Scheduler *_pSched, bool initialState = false) {
+        pSched = _pSched;
+        tID = pSched->add([this]() { this->loop(); }, name, 10000L);
+
+        pSched->subscribe(tID, name + "/display/#", [this](String topic, String msg, String orig) {
+            this->commandParser(topic.substring(name.length() + 9), msg, name + "/display");
+        });
+        pSched->subscribe(tID, name + "/light/#", [this](String topic, String msg, String orig) {
+            this->light.commandParser(topic.substring(name.length() + 7), msg);
+        });
+
+        // initialize default values
+        current_font = 0;
+
+        // prepare hardware
+        display.begin();
+        display.setTextWrap(false);
+
+        // start light controller
+        light.begin([this](bool state, double level, bool control,
+                           bool notify) { this->onLightControl(state, level, control, notify); },
+                    initialState);
+    }
+
+  private:
+    void loop() {
+        light.loop();
+    }
+
+    void onLightControl(bool state, double level, bool control, bool notify) {
+        uint8_t intensity = (level * 15000) / 1000;
+        if (control) {
+            display.setIntensity(intensity);
+        }
+        if (control) {
+            display.setPowerSave(!state);
+        }
+        if (notify) {
+            pSched->publish(name + "/light/unitbrightness", String(level, 3));
+            pSched->publish(name + "/light/state", state ? "on" : "off");
+        }
+    }
+
+    // abstract methods implementation
+    virtual void getDimensions(int16_t &width, int16_t &height) {
+        width = display.width();
+        height = display.height();
+    }
+
+    virtual bool getTextWrap() {
+        return display.getTextWrap();
+    }
+
+    virtual void setTextWrap(bool wrap) {
+        display.setTextWrap(wrap);
+    }
+
+    virtual void setTextFont(uint8_t font, int16_t baseLineAdjustment) {
+        display.setFont(fonts[font]);
+        if (baseLineAdjustment) {
+            int16_t y = display.getCursorY();
+            display.setCursor(display.getCursorX(), y + baseLineAdjustment);
+        }
+    }
+
+    virtual void getCursor(int16_t &x, int16_t &y) {
+        x = display.getCursorX();
+        y = display.getCursorY();
+    }
+
+    virtual void setCursor(int16_t x, int16_t y) {
+        display.setCursor(x, y);
+    }
+
+    virtual void displayClear(int16_t x, int16_t y, int16_t w, int16_t h, bool flush = true) {
+        display.fillRect(x, y, w, h, 0);
+        if (flush) {
+            display.write();
+        }
+    }
+
+    virtual void displayPrint(String content, bool ln = false, bool flush = true) {
+        if (ln) {
+            display.println(content);
+        } else {
+            display.print(content);
+        }
+        if (flush) {
+            display.write();
+        }
+    }
+
+    virtual bool displayFormat(int16_t x, int16_t y, int16_t w, int16_t align, String content,
+                               bool flush = true) {
+        bool ret = display.printFormatted(x, y, w, align, content, sizes[current_font].baseLine);
+        if (flush) {
+            display.write();
+        }
+        return ret;
+    }
+
+    // implementation
+    void getTextDimensions(uint8_t font, const char *content, int16_t &width, int16_t &height) {
+        if (!content || !*content) {
+            width = 0;
+            height = 0;
+            return;
+        }
+        int16_t x, y;
+        uint16_t w, h;
+        uint8_t old_font = current_font;
+        bool old_wrap = display.getTextWrap();
+        display.setFont(fonts[font]);
+        display.setTextWrap(false);
+        display.getTextBounds(content, 0, sizes[font].baseLine, &x, &y, &w, &h);
+        display.setTextWrap(old_wrap);
+        display.setFont(fonts[old_font]);
+        width = (int16_t)w;
+        height = (int16_t)h;
+    }
+};
+
+const char *DisplayMatrixMAX72XX::version = "0.1.0";
+
+#ifdef KAKKA
 class DisplayMatrixMAX72XX {
   public:
     static const char *version;  // = "0.1.0";
@@ -83,7 +244,7 @@ class DisplayMatrixMAX72XX {
     String name;
 
     // hardware configuration
-    Max72xxMatrix max;
+    Max72xxMatrix display;
 
     // runtime
     LightController light;
@@ -93,7 +254,7 @@ class DisplayMatrixMAX72XX {
     // runtime - program control
     ustd::array<ProgramItem> program;
     ProgramItem default_item;
-    uint16_t program_counter;
+    int16_t program_counter;
     State program_state;
     unsigned long anonymous_counter;
     // runtime - effect control
@@ -110,7 +271,7 @@ class DisplayMatrixMAX72XX {
      * No hardware interaction is performed, until \ref begin() is called.
      *
      * @param name Name of the led, used to reference it by pub/sub messages
-     * @param csPin     The chip select pin. (default: D8)
+     * @param csPin     The chip select pin.
      * @param hDisplays Horizontal number of 8x8 display units. (default: 1)
      * @param vDisplays Vertical number of 8x8 display units. (default: 1)
      * @param rotation  Define if and how the displays are rotated. The first display
@@ -118,9 +279,9 @@ class DisplayMatrixMAX72XX {
      *                  from 0 to 3 representing respectively no rotation, 90 degrees clockwise, 180
      *                  degrees and 90 degrees counter clockwise.
      */
-    DisplayMatrixMAX72XX(String name, uint8_t csPin = D8, uint8_t hDisplays = 1,
-                         uint8_t vDisplays = 1, uint8_t rotation = 0)
-        : name(name), max(csPin, hDisplays, vDisplays, rotation), fonts(4, ARRAY_MAX_SIZE, 4) {
+    DisplayMatrixMAX72XX(String name, uint8_t csPin, uint8_t hDisplays = 1, uint8_t vDisplays = 1,
+                         uint8_t rotation = 0)
+        : name(name), display(csPin, hDisplays, vDisplays, rotation), fonts(4, ARRAY_MAX_SIZE, 4) {
         FontSize default_size = {0, 6, 8, 0};
         fonts.add(default_font);
         sizes.add(default_size);
@@ -155,9 +316,9 @@ class DisplayMatrixMAX72XX {
         anonymous_counter = 0;
 
         // prepare hardware
-        max.begin();
-        max.setPowerSave(false);
-        max.setIntensity(8);
+        display.begin();
+        display.setPowerSave(false);
+        display.setIntensity(8);
 
         // start light controller
         light.begin([this](bool state, double level, bool control,
@@ -255,7 +416,7 @@ class DisplayMatrixMAX72XX {
                 item.content = item.content.substring(0, charPos);
                 displayLeft(item);
                 item.content = temp;
-                lastPos = max.getCursorX();
+                lastPos = display.getCursorX();
                 initNextCharDimensions(item);
             } else {
                 displayLeft(item);
@@ -286,7 +447,7 @@ class DisplayMatrixMAX72XX {
             charPos = 0;
             lastPos = 0;
             delayCtr = 17 - item.speed;
-            slidePos = max.width();
+            slidePos = display.width();
             if (initNextCharDimensions(item)) {
                 displayClear(item);
                 program_state = FadeIn;
@@ -308,19 +469,19 @@ class DisplayMatrixMAX72XX {
             }
             delayCtr = 17 - item.speed;
             // clear char at previous position
-            max.fillRect(slidePos, 0, slidePos + charX, charY, 0);
+            display.fillRect(slidePos, 0, slidePos + charX, charY, 0);
             // draw char at new position
             // slidePos = (slidePos - speed) < lastPos ? lastPos : slidePos - speed;
             slidePos--;
-            max.drawChar(slidePos, sizes[item.font].baseLine, item.content[charPos], 1, 0, 1);
+            display.drawChar(slidePos, sizes[item.font].baseLine, item.content[charPos], 1, 0, 1);
             DBG3("Writing " + String(content[charPos]) + " at position " + String(slidePos));
             // flush to display
-            max.write();
+            display.write();
             // prepare for next iterations:
             if (slidePos <= lastPos) {
                 // char has arrived
                 lastPos += charX;
-                slidePos = max.width();
+                slidePos = display.width();
                 if (lastPos >= slidePos) {
                     // display full
                     fadeInEnd(item);
@@ -378,52 +539,52 @@ class DisplayMatrixMAX72XX {
         } else {
             program_counter++;
         }
-        if (program_counter >= program.length()) {
+        if (program_counter >= (int16_t)program.length()) {
             program_counter = 0;
         }
     }
 
     void displaySetFont(ProgramItem &item) {
-        max.setFont(fonts[item.font]);
-        max.setCursor(max.getCursorX(), sizes[item.font].baseLine);
+        display.setFont(fonts[item.font]);
+        display.setCursor(display.getCursorX(), sizes[item.font].baseLine);
     }
 
     void displayClear(ProgramItem &item, bool flush = true) {
-        max.fillScreen(0);
-        max.setFont(fonts[item.font]);
-        max.setCursor(0, sizes[item.font].baseLine);
+        display.fillScreen(0);
+        display.setFont(fonts[item.font]);
+        display.setCursor(0, sizes[item.font].baseLine);
         if (flush) {
-            max.write();
+            display.write();
         }
     }
 
     void displayLeft(ProgramItem &item) {
         displayClear(item, false);
-        max.print(item.content);
-        max.write();
+        display.print(item.content);
+        display.write();
     }
 
     void displayCenter(ProgramItem &item) {
         displayClear(item, false);
         int16_t width = getTextWidth(item);
-        max.setCursor((max.width() - width) / 2, max.getCursorY());
-        max.print(item.content);
-        max.write();
+        display.setCursor((display.width() - width) / 2, display.getCursorY());
+        display.print(item.content);
+        display.write();
     }
 
     void displayRight(ProgramItem &item) {
         displayClear(item, false);
         int16_t width = getTextWidth(item);
-        max.setCursor(-width, max.getCursorY());
-        max.print(item.content);
-        max.write();
+        display.setCursor(-width, display.getCursorY());
+        display.print(item.content);
+        display.write();
     }
 
     int16_t getTextWidth(ProgramItem &item) {
         int16_t x, y;
         uint16_t w, h;
-        max.getTextBounds(item.content, 0, max.getCursorY(), &x, &y, &w, &h);
-        if (w < max.width()) {
+        display.getTextBounds(item.content, 0, display.getCursorY(), &x, &y, &w, &h);
+        if ((int16_t)w < display.width()) {
             return w;
         } else {
             GFXcanvas1 tmp(item.content.length() * sizes[item.font].xAdvance,
@@ -440,7 +601,7 @@ class DisplayMatrixMAX72XX {
         while (charPos < item.content.length()) {
             int16_t minx = 0x7FFF, miny = 0x7FFF, maxx = -1, maxy = -1;
             int16_t x = 0, y = sizes[item.font].baseLine;
-            max.getCharBounds(item.content[charPos], &x, &y, &minx, &miny, &maxx, &maxy);
+            display.getCharBounds(item.content[charPos], &x, &y, &minx, &miny, &maxx, &maxy);
             if (maxx >= minx) {
                 charX = x;
                 charY = sizes[item.font].yAdvance;
@@ -473,12 +634,12 @@ class DisplayMatrixMAX72XX {
         } else if (command == "off") {
             light.set(false);
             // } else if (command == "testmode") {
-            //     max.setTestMode(args == "on");
+            //     display.setTestMode(args == "on");
             // } else if (command == "intensity") {
-            //     max.setIntensity(parseRangedLong(args, 0, 15, 0, 15));
+            //     display.setIntensity(parseRangedLong(args, 0, 15, 0, 15));
             // } else if (command == "zerofill") {
-            //     max.fillScreen(0);
-            //     max.write();
+            //     display.fillScreen(0);
+            //     display.write();
         }
     }
 
@@ -749,7 +910,7 @@ class DisplayMatrixMAX72XX {
             // the deleted item was the current item. program counter is OK, but we need to reset
             // the sequence in order to start the next item immediately
             program_state = None;
-            if (program_counter >= program.length()) {
+            if (program_counter >= (int16_t)program.length()) {
                 program_counter = 0;
             }
         }
@@ -833,10 +994,10 @@ class DisplayMatrixMAX72XX {
     void onLightControl(bool state, double level, bool control, bool notify) {
         uint8_t intensity = (level * 15000) / 1000;
         if (control) {
-            max.setIntensity(intensity);
+            display.setIntensity(intensity);
         }
         if (control) {
-            max.setPowerSave(!state);
+            display.setPowerSave(!state);
         }
         if (notify) {
             //     char buf[32];
@@ -869,7 +1030,11 @@ class DisplayMatrixMAX72XX {
 
     static GFXglyph *pgm_read_glyph_ptr(const GFXfont *gfxFont, uint8_t c) {
 #ifdef __AVR__
-        return &(((GFXglyph *)pgm_read_pointer(&gfxFont->glyph))[c]);
+#if !defined(__INT_MAX__) || (__INT_MAX__ > 0xFFFF)
+        return &(((GFXglyph *)pgm_read_dword(&gfxFont->glyph))[c]);
+#else
+        return &(((GFXglyph *)pgm_read_word(&gfxFont->glyph))[c]);
+#endif
 #else
         // expression in __AVR__ section may generate "dereferencing type-punned
         // pointer will break strict-aliasing rules" warning In fact, on other
@@ -883,5 +1048,6 @@ class DisplayMatrixMAX72XX {
 const char *DisplayMatrixMAX72XX::version = "0.1.0";
 const char *DisplayMatrixMAX72XX::modeTokens[] = {"left", "center", "right", "slidein", nullptr};
 const GFXfont *DisplayMatrixMAX72XX::default_font = nullptr;
+#endif
 
 }  // namespace ustd

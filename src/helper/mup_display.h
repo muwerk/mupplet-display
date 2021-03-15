@@ -6,6 +6,7 @@
 #include "scheduler.h"
 
 namespace ustd {
+
 class MuppletDisplay {
   public:
     static const char *formatTokens[];
@@ -181,6 +182,7 @@ class MuppletDisplay {
         return false;
     }
 
+    // can be removed with release of mupplet-core 0.4.1
     bool isNumber(const char *value, bool integer = false) {
         if (!value) {
             return false;
@@ -212,12 +214,13 @@ class MuppletDisplay {
         }
     }
 
+    // abstract methods
     virtual void getDimensions(int16_t &width, int16_t &height) = 0;
     virtual bool getTextWrap() = 0;
     virtual void setTextWrap(bool wrap) = 0;
     virtual uint8_t getTextFont() = 0;
     virtual FontSize getTextFontSize() = 0;
-    virtual void setTextFont(uint8_t font) = 0;
+    virtual void setTextFont(uint8_t font, int16_t baseLineAdjustment) = 0;
     virtual void getCursor(int16_t &x, int16_t &y) = 0;
     virtual void setCursor(int16_t x, int16_t y) = 0;
     virtual void displayClear(int16_t x, int16_t y, int16_t w, int16_t h, bool flush = true) = 0;

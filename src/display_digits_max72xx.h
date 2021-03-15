@@ -107,7 +107,7 @@ class DisplayDigitsMAX72XX : public MuppletDisplay {
         return retVal;
     }
 
-    virtual void setTextFont(uint8_t font) {
+    virtual void setTextFont(uint8_t font, int16_t baseLineAdjustment) {
     }
 
     virtual void getCursor(int16_t &x, int16_t &y) {
