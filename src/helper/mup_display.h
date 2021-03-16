@@ -32,7 +32,7 @@ class MuppletDisplay {
     }
 
   protected:
-    bool commandParser(String command, String args, String topic) {
+    virtual bool commandParser(String command, String args, String topic) {
         if (command.startsWith("cmnd/")) {
             return commandCmdParser(command.substring(5), args);
         } else if (command.startsWith("cursor/")) {
@@ -43,7 +43,7 @@ class MuppletDisplay {
         return false;
     }
 
-    bool commandCmdParser(String command, String args) {
+    virtual bool commandCmdParser(String command, String args) {
         int16_t x, y, w, h, d, width, height;
         FontSize fs;
         array<String> params;

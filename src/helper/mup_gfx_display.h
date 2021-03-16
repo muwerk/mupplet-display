@@ -95,6 +95,30 @@ class MuppletGfxDisplay : public MuppletDisplay {
 #endif  //__AVR__
     }
 
+    virtual bool commandParser(String command, String args, String topic) {
+        if (MuppletDisplay::commandParser(command, args, topic)) {
+            return true;
+        } else if (command.startsWith("font/")) {
+            return fontParser(command.substring(5), args, topic + "/font");
+        }
+        return false;
+    }
+
+    bool fontParser(String command, String args, String topic) {
+        if (command == "get") {
+            pSched->publish(topic, String(getTextFont()));
+            return true;
+        } else if (command == "set") {
+            long font = parseRangedLong(args, 0, fonts.length() - 1, -1, -1);
+            if (font >= 0) {
+                setfont(font);
+                pSched->publish(topic, String(getTextFont()));
+                return true;
+            }
+        }
+        return false;
+    }
+
     // abstract methods implementation
     virtual uint8_t getTextFont() {
         return current_font;
