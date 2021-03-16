@@ -62,7 +62,7 @@ class MuppletDisplay {
             case 1:
                 // clear the specified line
                 y = parseLong(params[0], 0);
-                displayClear(0, y, width, fs.yAdvance);
+                displayClear(0, y * fs.yAdvance, width, fs.yAdvance);
                 setCursor(0, y + fs.baseLine);
                 return true;
             case 2:
