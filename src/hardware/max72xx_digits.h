@@ -7,15 +7,57 @@
 
 namespace ustd {
 
-static const uint8_t digitTable7Seg[] PROGMEM = {B01111110, B00110000, B01101101, B01111001,
-                                                 B00110011, B01011011, B01011111, B01110000,
-                                                 B01111111, B01111011};
+static const uint8_t digitTable7Seg[] PROGMEM = {
+    B01111110,  // 0
+    B00110000,  // 1
+    B01101101,  // 2
+    B01111001,  // 3
+    B00110011,  // 4
+    B01011011,  // 5
+    B01011111,  // 6
+    B01110000,  // 7
+    B01111111,  // 8
+    B01111011   // 9
+};
 
 static const uint8_t charTable7Seg[] PROGMEM = {
-    B01110111, B00011111, B00001101, B00111101, B01001111, B01000111, B01011110,
-    B00110111, B00000110, B00111100, B00000111, B00001110, B01110110, B01110110,
-    B00011101, B01100111, B11111110, B00000101, B01011011, B01110000, B00111110,
-    B00011100, B00011100, B00001001, B00100111, B01101101};
+    B01110111,  // A
+    B00011111,  // B
+    B00001101,  // C
+    B00111101,  // D
+    B01001111,  // E
+    B01000111,  // F
+    B01011110,  // G
+    B00110111,  // H
+    B00000110,  // I
+    B00111100,  // J
+    B00000111,  // K
+    B00001110,  // L
+    B01110110,  // M
+    B00010101,  // N
+    B00011101,  // O
+    B01100111,  // P
+    B11101110,  // Q
+    B00000101,  // R
+    B01011011,  // S
+    B00001111,  // T
+    B00111110,  // U
+    B00011100,  // V
+    B00011100,  // W
+    B01001001,  // X
+    B00111011,  // Y
+    B01101101   // Z
+};
+
+#define MAX72XX_DP B10000000
+#define MAX72XX_SPACE B00000000
+#define MAX72XX_EXCLAMATION B10110000
+#define MAX72XX_QUOTES B00100010
+#define MAX72XX_DASH B00000001
+#define MAX72XX_EQUALS B00001001
+#define MAX72XX_UNDERSCORE B00001000
+#define MAX72XX_PAROPEN B01001110
+#define MAX72XX_PARCLOSE B01111000
 
 /*! \brief The MAX72XX Digits Display Class
  *
@@ -44,13 +86,12 @@ class Max72xxDigits : public Print {
   public:
     /*! Instantiate a Max72xxDigits instance
      *
-     * @param csPin     The chip select pin. (default: D8)
+     * @param csPin     The chip select pin.
      * @param hDisplays Horizontal number of display units. (default: 1)
      * @param vDisplays Vertical number of display units. (default: 1)
      * @param length    Number of digits per unit (default: 8)
      */
-    Max72xxDigits(uint8_t csPin = D8, uint8_t hDisplays = 1, uint8_t vDisplays = 1,
-                  uint8_t length = 8)
+    Max72xxDigits(uint8_t csPin, uint8_t hDisplays = 1, uint8_t vDisplays = 1, uint8_t length = 8)
         : driver(csPin, hDisplays * vDisplays), length(length > 8 ? 8 : length) {
         bitmapSize = hDisplays * vDisplays * length;
         bitmap = (uint8_t *)malloc(bitmapSize + (hDisplays * vDisplays * 2));
@@ -162,8 +203,9 @@ class Max72xxDigits : public Print {
      * @param w         Width in digit positions
      * @param align     Alignment of the string to display: 0 = left, 1 = center, 2 = right
      * @param content   The string to print
+     * @return          `true` if the string fits the defined space, `false` if output was truncated
      */
-    void printFormatted(int16_t x, int16_t y, int16_t w, int16_t align, String content) {
+    bool printFormatted(int16_t x, int16_t y, int16_t w, int16_t align, String content) {
         uint8_t shadowBuffer[8];
         x = x < 0 ? 0 : x >= _width ? _width - 1 : x;
         y = y < 0 ? 0 : y >= _height ? _height - 1 : y;
@@ -176,39 +218,28 @@ class Max72xxDigits : public Print {
                 pDst--;
             } else if (*pSrc == '.' || *pSrc == ',') {
                 if (pDst == shadowBuffer) {
-                    *pDst = B10000000;
+                    *pDst = MAX72XX_DP;
                 } else {
                     pDst--;
-                    *pDst |= B10000000;
+                    *pDst |= MAX72XX_DP;
                 }
-            } else if (*pSrc == ' ') {
-                *pDst = B00000000;
-            } else if (*pSrc == '-') {
-                *pDst = B00000001;
-            } else if (*pSrc == '_') {
-                *pDst = B00001000;
-            } else if (*pSrc == '=') {
-                *pDst = B00001001;
-            } else if (*pSrc >= '0' && *pSrc <= '9') {
-                *pDst = pgm_read_byte_near(digitTable7Seg + *pSrc - '0');
-            } else if (*pSrc >= 'A' && *pSrc <= 'Z') {
-                *pDst = pgm_read_byte_near(charTable7Seg + *pSrc - 'A');
-            } else if (*pSrc >= 'a' && *pSrc <= 'z') {
-                *pDst = pgm_read_byte_near(charTable7Seg + *pSrc - 'a');
             } else {
-                *pDst = B00001000;
+                *pDst = mapchar(*pSrc);
             }
             pSrc++;
             pDst++;
         }
         int16_t size = pDst - shadowBuffer;
         int16_t offs = 0;
+        int16_t newx = x;
         pDst = bitmap + (y * length) + x;  // fist position of the destination slot
         switch (align) {
         default:
         case 0:
             // left
             memcpy(pDst, shadowBuffer, min(w, size));
+            // set cursor after last printed character
+            newx = x + min(w, size);
             break;
         case 1:
             // center
@@ -216,10 +247,12 @@ class Max72xxDigits : public Print {
                 // string is larger than slot size - display only middle part
                 offs = (size - w) / 2;
                 memcpy(pDst, shadowBuffer + offs, w);
+                newx = x + size - offs;
             } else {
                 // string is smaller than slot size - display center aligned
                 offs = (w - size) / 2;
                 memcpy(pDst + offs, shadowBuffer, size);
+                newx = x + size + offs;
             }
             break;
         case 2:
@@ -233,8 +266,12 @@ class Max72xxDigits : public Print {
                 offs = w - size;
                 memcpy(pDst + offs, shadowBuffer, size);
             }
+            newx = x + w;
             break;
         }
+        // set cursor after last printed character
+        setCursor(min(_width, newx), y);
+        return *pSrc == 0 && size <= w;
     }
 
     /*! Flushes the frame buffer to the display
@@ -320,6 +357,43 @@ class Max72xxDigits : public Print {
     }
 
   protected:
+    uint8_t mapchar(uint8_t c) {
+        switch (c) {
+        case '.':
+        case ',':
+            return MAX72XX_DP;
+        case '!':
+            return MAX72XX_EXCLAMATION;
+        case '"':
+            return MAX72XX_QUOTES;
+        case ' ':
+            return MAX72XX_SPACE;
+        case '-':
+            return MAX72XX_DASH;
+        case '=':
+            return MAX72XX_EQUALS;
+        case '(':
+        case '[':
+        case '{':
+            return MAX72XX_PAROPEN;
+        case ')':
+        case ']':
+        case '}':
+            return MAX72XX_PARCLOSE;
+        case '_':
+            return MAX72XX_UNDERSCORE;
+        }
+        if (c >= '0' && c <= '9') {
+            return pgm_read_byte_near(digitTable7Seg + c - '0');
+        } else if (c >= 'A' && c <= 'Z') {
+            return pgm_read_byte_near(charTable7Seg + c - 'A');
+        } else if (c >= 'a' && c <= 'z') {
+            return pgm_read_byte_near(charTable7Seg + c - 'a');
+        } else {
+            return MAX72XX_UNDERSCORE;
+        }
+    }
+
     virtual size_t write(uint8_t c) {
         if (c == '\r') {
             cursor_x = 0;
@@ -345,27 +419,13 @@ class Max72xxDigits : public Print {
             return 1;
         } else if (c == '.' || c == ',') {
             if (cursor_x == 0) {
-                bitmap[index] = B10000000;
+                bitmap[index] = MAX72XX_DP;
             } else {
-                bitmap[index - 1] |= B10000000;
+                bitmap[index - 1] |= MAX72XX_DP;
                 cursor_x--;
             }
-        } else if (c == ' ') {
-            bitmap[index] = B00000000;
-        } else if (c == '-') {
-            bitmap[index] = B00000001;
-        } else if (c == '_') {
-            bitmap[index] = B00001000;
-        } else if (c == '=') {
-            bitmap[index] = B00001001;
-        } else if (c >= '0' && c <= '9') {
-            bitmap[index] = pgm_read_byte_near(digitTable7Seg + c - '0');
-        } else if (c >= 'A' && c <= 'Z') {
-            bitmap[index] = pgm_read_byte_near(charTable7Seg + c - 'A');
-        } else if (c >= 'a' && c <= 'z') {
-            bitmap[index] = pgm_read_byte_near(charTable7Seg + c - 'a');
         } else {
-            bitmap[index] = B00001000;
+            bitmap[index] = mapchar(c);
         }
         cursor_x++;
         return 1;

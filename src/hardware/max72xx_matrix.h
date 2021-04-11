@@ -32,7 +32,7 @@ class Max72xxMatrix : public Adafruit_GFX {
   public:
     /*! Instantiate a Max72xxMatrix instance
      *
-     * @param csPin     The chip select pin. (default: D8)
+     * @param csPin     The chip select pin.
      * @param hDisplays Horizontal number of 8x8 display units. (default: 1)
      * @param vDisplays Vertical number of 8x8 display units. (default: 1)
      * @param rotation  Define if and how the displays are rotated. The first display
@@ -40,8 +40,7 @@ class Max72xxMatrix : public Adafruit_GFX {
      *                  from 0 to 3 representing respectively no rotation, 90 degrees clockwise, 180
      *                  degrees and 90 degrees counter clockwise.
      */
-    Max72xxMatrix(uint8_t csPin = D8, uint8_t hDisplays = 1, uint8_t vDisplays = 1,
-                  uint8_t rotation = 0)
+    Max72xxMatrix(uint8_t csPin, uint8_t hDisplays = 1, uint8_t vDisplays = 1, uint8_t rotation = 0)
         : Adafruit_GFX(hDisplays << 3, vDisplays << 3), driver(csPin, hDisplays * vDisplays),
           hDisplays(hDisplays) {
         uint8_t displays = hDisplays * vDisplays;
@@ -148,6 +147,27 @@ class Max72xxMatrix : public Adafruit_GFX {
         }
     }
 
+    /*! Returns if too long text will be wrapped to the next line
+     * @returns Wrapping mode
+     */
+    inline bool getTextWrap() const {
+        return wrap;
+    }
+
+    /*! Get text cursor X location
+     * @returns X coordinate in digit positions
+     */
+    inline int16_t getCursorX() const {
+        return cursor_x;
+    }
+
+    /*! Get text cursor Y location
+     * @returns Y coordinate in digit positions
+     */
+    inline int16_t getCursorY() const {
+        return cursor_y;
+    };
+
     /*! Calculates the bounding box of a character
      *
      * @param  c     The ASCII character in question
@@ -165,6 +185,65 @@ class Max72xxMatrix : public Adafruit_GFX {
     void getCharBounds(unsigned char c, int16_t *x, int16_t *y, int16_t *minx, int16_t *miny,
                        int16_t *maxx, int16_t *maxy) {
         charBounds(c, x, y, minx, miny, maxx, maxy);
+    }
+
+    /*! Prints a text at a specified location with a specified formatting
+     *
+     * This method prints a text at the specified location with the specified length using left,
+     * right or centered alignment. All parameters are checked for plasibility and will be adapted
+     * to the current display size.
+     *
+     * @param x         Top left corner x coordinate
+     * @param y         Top left corner y coordinate
+     * @param w         Width in digit positions
+     * @param align     Alignment of the string to display: 0 = left, 1 = center, 2 = right
+     * @param content   The string to print
+     * @param baseLine  The distance between baseline and topline
+     * @param yAdvance  The newline distance - If specified, the height of the calculated bounding
+     *                  box is adjusted to a multiple of this value
+     * @return          `true` if the string fits the defined space, `false` if output was truncated
+     */
+    bool printFormatted(int16_t x, int16_t y, int16_t w, int16_t align, String content,
+                        uint8_t baseLine, uint8_t yAdvance = 0) {
+        int16_t xx = 0, yy = 0;
+        uint16_t ww = 0, hh = 0;
+        bool old_wrap = wrap;
+        wrap = false;
+        getTextBounds(content, 0, 0, &xx, &yy, &ww, &hh);
+        wrap = old_wrap;
+
+        switch (align) {
+        default:
+        case 0:
+            // left
+            xx = 0;
+            break;
+        case 1:
+            // center
+            xx = (w - ww) / 2;
+            break;
+        case 2:
+            // right
+            xx = w - ww;
+            break;
+        }
+        if (yAdvance && (hh % yAdvance)) {
+            hh = ((hh / yAdvance) + 1) * yAdvance;
+        }
+        GFXcanvas1 tmp(w, hh);
+        if (gfxFont) {
+            tmp.setFont(gfxFont);
+        }
+        tmp.fillScreen(textbgcolor);
+        tmp.setTextWrap(false);
+        tmp.setCursor(xx, baseLine ? baseLine : -1 * yy);
+        tmp.setTextColor(textcolor, textbgcolor);
+        tmp.print(content);
+        // fillRect(x, y, w, hh, textbgcolor);
+        drawBitmap(x, y, tmp.getBuffer(), w, hh, textcolor, textbgcolor);
+        // set cursor after last printed character
+        setCursor(x + tmp.getCursorX(), y + (baseLine ? baseLine : -1 * yy));
+        return w >= (int16_t)ww;
     }
 
   public:
