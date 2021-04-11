@@ -199,10 +199,12 @@ class Max72xxMatrix : public Adafruit_GFX {
      * @param align     Alignment of the string to display: 0 = left, 1 = center, 2 = right
      * @param content   The string to print
      * @param baseLine  The distance between baseline and topline
+     * @param yAdvance  The newline distance - If specified, the height of the calculated bounding
+     *                  box is adjusted to a multiple of this value
      * @return          `true` if the string fits the defined space, `false` if output was truncated
      */
     bool printFormatted(int16_t x, int16_t y, int16_t w, int16_t align, String content,
-                        uint8_t baseLine) {
+                        uint8_t baseLine, uint8_t yAdvance = 0) {
         bool old_wrap = wrap;
         int16_t xx = 0, yy = 0;
         uint16_t ww = 0, hh = 0;
@@ -224,6 +226,9 @@ class Max72xxMatrix : public Adafruit_GFX {
             xx = w - ww;
             break;
         }
+        if (yAdvance && ww % yAdvance) {
+            hh = ((hh / yAdvance) + 1) * yAdvance;
+        }
         GFXcanvas1 tmp(w, hh);
         if (gfxFont) {
             tmp.setFont(gfxFont);
@@ -234,6 +239,8 @@ class Max72xxMatrix : public Adafruit_GFX {
         tmp.print(content);
         fillRect(x, y, w, hh, 0);
         drawBitmap(x, y, tmp.getBuffer(), w, hh, 1);
+        // set cursor after last printed character
+        setCursor(x + tmp.getCursorX(), y + (baseLine ? baseLine : -1 * yy));
         return w >= (int16_t)ww;
     }
 

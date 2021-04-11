@@ -203,12 +203,15 @@ class Max72xxDigits : public Print {
         }
         int16_t size = pDst - shadowBuffer;
         int16_t offs = 0;
+        int16_t newx = x;
         pDst = bitmap + (y * length) + x;  // fist position of the destination slot
         switch (align) {
         default:
         case 0:
             // left
             memcpy(pDst, shadowBuffer, min(w, size));
+            // set cursor after last printed character
+            newx = x + min(w, size);
             break;
         case 1:
             // center
@@ -216,10 +219,12 @@ class Max72xxDigits : public Print {
                 // string is larger than slot size - display only middle part
                 offs = (size - w) / 2;
                 memcpy(pDst, shadowBuffer + offs, w);
+                newx = x + size - offs;
             } else {
                 // string is smaller than slot size - display center aligned
                 offs = (w - size) / 2;
                 memcpy(pDst + offs, shadowBuffer, size);
+                newx = x + size + offs;
             }
             break;
         case 2:
@@ -233,8 +238,11 @@ class Max72xxDigits : public Print {
                 offs = w - size;
                 memcpy(pDst + offs, shadowBuffer, size);
             }
+            newx = x + w;
             break;
         }
+        // set cursor after last printed character
+        setCursor(min(_width, newx), y);
         return *pSrc == 0 && size <= w;
     }
 

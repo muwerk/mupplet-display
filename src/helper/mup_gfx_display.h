@@ -13,7 +13,6 @@ class MuppletGfxDisplay : public MuppletDisplay {
     static const GFXfont *default_font;
     array<const GFXfont *> fonts;
     array<FontSize> sizes;
-    uint8_t current_font;
 
   public:
     MuppletGfxDisplay(String name) : MuppletDisplay(name), fonts(4, ARRAY_MAX_SIZE, 4) {
@@ -106,13 +105,13 @@ class MuppletGfxDisplay : public MuppletDisplay {
 
     bool fontParser(String command, String args, String topic) {
         if (command == "get") {
-            pSched->publish(topic, String(getTextFont()));
+            pSched->publish(topic, String(current_font));
             return true;
         } else if (command == "set") {
             long font = parseRangedLong(args, 0, fonts.length() - 1, -1, -1);
             if (font >= 0) {
                 setfont(font);
-                pSched->publish(topic, String(getTextFont()));
+                pSched->publish(topic, String(current_font));
                 return true;
             }
         }
@@ -120,12 +119,12 @@ class MuppletGfxDisplay : public MuppletDisplay {
     }
 
     // abstract methods implementation
-    virtual uint8_t getTextFont() {
-        return current_font;
-    }
-
     virtual FontSize getTextFontSize() {
         return sizes[current_font];
+    }
+
+    virtual uint8_t getTextFontCount() {
+        return fonts.length();
     }
 };
 

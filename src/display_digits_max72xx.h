@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "ustd_array.h"
 #include "muwerk.h"
 #include "helper/light_controller.h"
 #include "helper/mup_display.h"
@@ -44,7 +43,7 @@ class DisplayDigitsMAX72XX : public MuppletDisplay {
      */
     void begin(Scheduler *_pSched, bool initialState = false) {
         pSched = _pSched;
-        tID = pSched->add([this]() { this->loop(); }, name, 10000L);
+        tID = pSched->add([this]() { this->loop(); }, name, 80000L);
 
         pSched->subscribe(tID, name + "/display/#", [this](String topic, String msg, String orig) {
             this->commandParser(topic.substring(name.length() + 9), msg, name + "/display");
@@ -53,6 +52,11 @@ class DisplayDigitsMAX72XX : public MuppletDisplay {
             this->light.commandParser(topic.substring(name.length() + 7), msg);
         });
 
+        // initialize default values
+        current_font = 0;
+#ifdef USTD_FEATURE_PROGRAMPLAYER
+        programInit();
+#endif
         // prepare hardware
         display.begin();
         display.setTextWrap(false);
@@ -66,6 +70,9 @@ class DisplayDigitsMAX72XX : public MuppletDisplay {
   private:
     void loop() {
         light.loop();
+#ifdef USTD_FEATURE_PROGRAMPLAYER
+        programLoop();
+#endif
     }
 
     void onLightControl(bool state, double level, bool control, bool notify) {
@@ -95,16 +102,16 @@ class DisplayDigitsMAX72XX : public MuppletDisplay {
         display.setTextWrap(wrap);
     }
 
-    virtual uint8_t getTextFont() {
-        return 0;
-    }
-
     virtual FontSize getTextFontSize() {
         FontSize retVal;
         retVal.baseLine = 0;
         retVal.xAdvance = 1;
         retVal.yAdvance = 1;
         return retVal;
+    }
+
+    virtual uint8_t getTextFontCount() {
+        return 1;
     }
 
     virtual void setTextFont(uint8_t font, int16_t baseLineAdjustment) {
@@ -119,31 +126,53 @@ class DisplayDigitsMAX72XX : public MuppletDisplay {
         display.setCursor(x, y);
     }
 
-    virtual void displayClear(int16_t x, int16_t y, int16_t w, int16_t h, bool flush = true) {
+    virtual void displayClear(int16_t x, int16_t y, int16_t w, int16_t h) {
         display.fillRect(x, y, w, h);
-        if (flush) {
-            display.write();
-        }
+        display.write();
     }
 
-    virtual void displayPrint(String content, bool ln = false, bool flush = true) {
+    virtual void displayClear(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t bg) {
+        display.fillRect(x, y, w, h);
+        display.write();
+    }
+
+    virtual void displayPrint(String content, bool ln = false) {
         if (ln) {
             display.println(content);
         } else {
             display.print(content);
         }
-        if (flush) {
-            display.write();
-        }
+        display.write();
     }
+
     virtual bool displayFormat(int16_t x, int16_t y, int16_t w, int16_t align, String content,
-                               bool flush = true) {
+                               uint8_t font, uint16_t color, uint16_t bg) {
         bool ret = display.printFormatted(x, y, w, align, content);
-        if (flush) {
-            display.write();
-        }
+        display.write();
         return ret;
     }
+
+#ifdef USTD_FEATURE_PROGRAMPLAYER
+    virtual bool initNextCharDimensions(ProgramItem &item) {
+        while (charPos < item.content.length()) {
+            charX = display.getCharLen(item.content[charPos], false);
+            charY = 1;
+            if (charX) {
+                if (item.content[charPos] == ' ') {
+                    lastPos += charX;
+                } else {
+                    return true;
+                }
+            } else if (item.content[charPos] == ' ') {
+                lastPos += charX;
+            }
+            // char is not printable
+            ++charPos;
+        }
+        // end of string
+        return false;
+    }
+#endif
 };
 
 const char *DisplayDigitsMAX72XX::version = "0.1.0";

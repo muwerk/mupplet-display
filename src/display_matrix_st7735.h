@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include "ustd_array.h"
-#include "timeout.h"
 #include "muwerk.h"
 #include "helper/light_controller.h"
 #include "helper/mup_gfx_display.h"
@@ -54,6 +52,8 @@ class DisplayMatrixST7735 : public MuppletGfxDisplay {
                         bool blActiveLogic = false, uint8_t blChannel = 0)
         : MuppletGfxDisplay(name), display(csPin, dcPin, rsPin, hardware, rotation), blPin(blPin),
           blActiveLogic(blActiveLogic), blChannel(blChannel) {
+        current_bg = ST7735_BLACK;
+        current_fg = ST7735_WHITE;
     }
 
     /*! Initialize the display hardware and start operation
@@ -79,10 +79,14 @@ class DisplayMatrixST7735 : public MuppletGfxDisplay {
 
         // initialize default values
         current_font = 0;
+#ifdef USTD_FEATURE_PROGRAMPLAYER
+        programInit();
+#endif
 
         // prepare hardware
         display.begin();
         display.setTextWrap(false);
+        display.setTextColor(current_fg, current_bg);
 
         // start light controller
         if (blPin != -1 && blPin != 0) {
@@ -99,6 +103,9 @@ class DisplayMatrixST7735 : public MuppletGfxDisplay {
   private:
     void loop() {
         light.loop();
+#ifdef USTD_FEATURE_PROGRAMPLAYER
+        programLoop();
+#endif
     }
 
     void onLightControl(bool state, double level, bool control, bool notify) {
@@ -172,32 +179,54 @@ class DisplayMatrixST7735 : public MuppletGfxDisplay {
         display.setCursor(x, y);
     }
 
-    virtual void displayClear(int16_t x, int16_t y, int16_t w, int16_t h, bool flush = true) {
+    virtual void displayClear(int16_t x, int16_t y, int16_t w, int16_t h) {
         display.fillRect(x, y, w, h, display.getTextBackground());
-        // if (flush) {
-        //     display.write();
-        // }
     }
 
-    virtual void displayPrint(String content, bool ln = false, bool flush = true) {
+    virtual void displayClear(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t bg) {
+        display.fillRect(x, y, w, h, bg);
+    }
+
+    virtual void displayPrint(String content, bool ln = false) {
         if (ln) {
             display.println(content);
         } else {
             display.print(content);
         }
-        // if (flush) {
-        //     display.write();
-        // }
     }
 
     virtual bool displayFormat(int16_t x, int16_t y, int16_t w, int16_t align, String content,
-                               bool flush = true) {
-        bool ret = display.printFormatted(x, y, w, align, content, sizes[current_font].baseLine);
-        // if (flush) {
-        //     display.write();
-        // }
-        return ret;
+                               uint8_t font, uint16_t color, uint16_t bg) {
+        display.setFont(fonts[font]);
+        display.setTextColor(color, bg);
+        return display.printFormatted(x, y, w, align, content, sizes[font].baseLine,
+                                      sizes[font].yAdvance);
     }
+
+#ifdef USTD_FEATURE_PROGRAMPLAYER
+    virtual bool initNextCharDimensions(ProgramItem &item) {
+        while (charPos < item.content.length()) {
+            int16_t minx = 0x7FFF, miny = 0x7FFF, maxx = -1, maxy = -1;
+            int16_t x = 0, y = sizes[item.font].baseLine;
+            display.getCharBounds(item.content[charPos], &x, &y, &minx, &miny, &maxx, &maxy);
+            if (maxx >= minx) {
+                charX = x;
+                charY = sizes[item.font].yAdvance;
+                if (item.content[charPos] == ' ') {
+                    lastPos += charX;
+                } else {
+                    return true;
+                }
+            } else if (item.content[charPos] == ' ') {
+                lastPos += charX;
+            }
+            // char is not printable
+            ++charPos;
+        }
+        // end of string
+        return false;
+    }
+#endif
 
     // implementation
     void initBacklightHardware() {
