@@ -117,6 +117,9 @@ class DisplayDigitsMAX72XX : public MuppletDisplay {
     virtual void setTextFont(uint8_t font, int16_t baseLineAdjustment) {
     }
 
+    virtual void setTextColor(uint16_t fg, uint16_t bg) {
+    }
+
     virtual void getCursor(int16_t &x, int16_t &y) {
         x = display.getCursorX();
         y = display.getCursorY();

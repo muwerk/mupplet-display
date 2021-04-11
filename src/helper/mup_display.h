@@ -142,16 +142,18 @@ class MuppletDisplay {
      * @param repeat    Number of repetitions for the program item. Set `0` for infinite repetitions
      * @param speed     Effect speed of the program item. Value range: 1 (slow) to 16 (fast)
      * @param font      Font index of program item. Set `0` for builtin font.
-     * @param color     The color of the displayed item
+     * @param color     The color of the displayed item (default: white)
+     * @param bg        The background colot of the displayed item (default: black)
      */
     void setDefaults(Mode mode, unsigned long duration, int16_t repeat, uint8_t speed, uint8_t font,
-                     uint16_t color = 65535) {
+                     uint16_t color = 0xffff, uint16_t bg = 0x0000) {
         default_item.mode = mode;
         default_item.duration = duration;
         default_item.repeat = repeat;
         default_item.speed = speed > 16 ? 16 : speed;
         default_item.font = font < getTextFontCount() ? font : 0;
-        default_item.color = color;
+        default_item.color = features & MUPDISP_FEATURE_COLOR ? color : color ? 1 : 0;
+        default_item.bg = features & MUPDISP_FEATURE_COLOR ? bg : bg ? 1 : 0;
     }
 
     /*! Remove all program items
@@ -173,7 +175,7 @@ class MuppletDisplay {
         default_item.repeat = 1;
         default_item.speed = 16;
         default_item.font = 0;
-        default_item.color = 65535;
+        default_item.color = features && MUPDISP_FEATURE_COLOR ? 0xffff : 1;
         default_item.bg = 0;
 
         // initialize state machine
@@ -193,6 +195,8 @@ class MuppletDisplay {
         int16_t x, y, w, h;
         bool cur_wrap = getTextWrap();
         uint8_t cur_font = current_font;
+        uint16_t cur_fg = current_fg;
+        uint16_t cur_bg = current_bg;
         getCursor(x, y);
         getDimensions(w, h);
 
@@ -216,6 +220,7 @@ class MuppletDisplay {
         }
 
         // restore state
+        setTextColor(cur_fg, cur_bg);
         setTextFont(cur_font, 0);
         setTextWrap(cur_wrap);
         setCursor(x, y);
@@ -394,9 +399,11 @@ class MuppletDisplay {
             } else if (command == "set") {
                 if (fg) {
                     current_fg = parseColor(args, current_fg) ? 1 : 0;
+                    setTextColor(current_fg, current_bg);
                     pSched->publish(topic, current_fg ? "0x1" : "0x0");
                 } else {
                     current_bg = parseColor(args, current_bg) ? 1 : 0;
+                    setTextColor(current_fg, current_bg);
                     pSched->publish(topic, current_bg ? "0x1" : "0x0");
                 }
             }
@@ -407,9 +414,11 @@ class MuppletDisplay {
             } else if (command == "set") {
                 if (fg) {
                     current_fg = parseColor(args, current_fg);
+                    setTextColor(current_fg, current_bg);
                     pSched->publish(topic, "0x" + String(current_fg, HEX));
                 } else {
                     current_bg = parseColor(args, current_bg);
+                    setTextColor(current_fg, current_bg);
                     pSched->publish(topic, "0x" + String(current_bg, HEX));
                 }
             }
@@ -501,6 +510,18 @@ class MuppletDisplay {
         } else if (command == "font/set") {
             if (parseFont(args, default_item)) {
                 return publishDefaultFont(topic + "/font");
+            }
+        } else if (command == "color/get") {
+            return publishDefaultColor(topic + "/color");
+        } else if (command == "color/set") {
+            if (parseColor(args, default_item)) {
+                return publishDefaultColor(topic + "/Color");
+            }
+        } else if (command == "background/get") {
+            return publishDefaultBackground(topic + "/background");
+        } else if (command == "background/set") {
+            if (parseBackground(args, default_item)) {
+                return publishDefaultBackground(topic + "/background");
             }
         }
         return false;
@@ -602,6 +623,8 @@ class MuppletDisplay {
         changed = changed || parseDuration(shift(args, ';'), default_item);
         changed = changed || parseSpeed(shift(args, ';'), default_item);
         changed = changed || parseFont(shift(args, ';'), default_item);
+        changed = changed || parseColor(shift(args, ';'), default_item);
+        changed = changed || parseBackground(shift(args, ';'), default_item);
         return changed;
     }
 
@@ -688,6 +711,30 @@ class MuppletDisplay {
         return true;
     }
 
+    bool parseColor(String args, ProgramItem &item) {
+        if (args.length()) {
+            item.color = parseColor(args, item.color);
+        }
+        return false;
+    }
+
+    bool publishDefaultColor(String topic) {
+        pSched->publish(topic + "/color", "0x" + String(default_item.color, HEX));
+        return true;
+    }
+
+    bool parseBackground(String args, ProgramItem &item) {
+        if (args.length()) {
+            item.bg = parseColor(args, item.bg);
+        }
+        return false;
+    }
+
+    bool publishDefaultBackground(String topic) {
+        pSched->publish(topic + "/background", "0x" + String(default_item.bg, HEX));
+        return true;
+    }
+
     int16_t addItem(String name, String args) {
         ProgramItem item = default_item;
         item.name = name;
@@ -696,6 +743,8 @@ class MuppletDisplay {
         parseDuration(shift(args, ';'), item);
         parseSpeed(shift(args, ';'), item);
         parseFont(shift(args, ';'), item);
+        parseColor(shift(args, ';'), item);
+        parseBackground(shift(args, ';'), item);
         item.content = args;
         return program.add(item);
     }
@@ -710,6 +759,8 @@ class MuppletDisplay {
         parseDuration(shift(args, ';'), item);
         parseSpeed(shift(args, ';'), item);
         parseFont(shift(args, ';'), item);
+        parseColor(shift(args, ';'), item);
+        parseBackground(shift(args, ';'), item);
         item.content = args;
         program[i] = item;
         if (program_counter == i) {
@@ -736,8 +787,8 @@ class MuppletDisplay {
             // adjust program counter
             program_counter--;
         } else if (program_counter == i) {
-            // the deleted item was the current item. program counter is OK, but we need to reset
-            // the sequence in order to start the next item immediately
+            // the deleted item was the current item. program counter is OK, but we need to
+            // reset the sequence in order to start the next item immediately
             program_state = None;
             if (program_counter >= (int16_t)program.length()) {
                 program_counter = 0;
@@ -817,6 +868,10 @@ class MuppletDisplay {
         itemString.concat(item.speed);
         itemString.concat(";");
         itemString.concat(item.font);
+        itemString.concat(";");
+        itemString.concat("0x" + String(item.color, HEX));
+        itemString.concat(";");
+        itemString.concat("0x" + String(item.bg, HEX));
         if (item.content.length()) {
             itemString.concat(";");
             itemString.concat(item.content);
@@ -864,6 +919,7 @@ class MuppletDisplay {
     virtual FontSize getTextFontSize() = 0;
     virtual uint8_t getTextFontCount() = 0;
     virtual void setTextFont(uint8_t font, int16_t baseLineAdjustment) = 0;
+    virtual void setTextColor(uint16_t fg, uint16_t bg) = 0;
     virtual void getCursor(int16_t &x, int16_t &y) = 0;
     virtual void setCursor(int16_t x, int16_t y) = 0;
     virtual void displayClear(int16_t x, int16_t y, int16_t w, int16_t h) = 0;

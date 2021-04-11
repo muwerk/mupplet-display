@@ -144,6 +144,10 @@ class DisplayMatrixMAX72XX : public MuppletGfxDisplay {
         }
     }
 
+    virtual void setTextColor(uint16_t fg, uint16_t bg) {
+        display.setTextColor(fg, bg);
+    }
+
     virtual void getCursor(int16_t &x, int16_t &y) {
         x = display.getCursorX();
         y = display.getCursorY();
@@ -179,6 +183,8 @@ class DisplayMatrixMAX72XX : public MuppletGfxDisplay {
         bool ret = display.printFormatted(x, y, w, align, content, sizes[font].baseLine,
                                           sizes[font].yAdvance);
         display.write();
+        display.setTextColor(current_fg, current_bg);
+        display.setFont(fonts[current_font]);
         return ret;
     }
 

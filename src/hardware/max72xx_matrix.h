@@ -234,12 +234,13 @@ class Max72xxMatrix : public Adafruit_GFX {
         if (gfxFont) {
             tmp.setFont(gfxFont);
         }
-        tmp.fillScreen(0);
+        tmp.fillScreen(textbgcolor);
         tmp.setTextWrap(false);
         tmp.setCursor(xx, baseLine ? baseLine : -1 * yy);
+        tmp.setTextColor(textcolor, textbgcolor);
         tmp.print(content);
-        fillRect(x, y, w, hh, 0);
-        drawBitmap(x, y, tmp.getBuffer(), w, hh, 1);
+        // fillRect(x, y, w, hh, textbgcolor);
+        drawBitmap(x, y, tmp.getBuffer(), w, hh, textcolor, textbgcolor);
         // set cursor after last printed character
         setCursor(x + tmp.getCursorX(), y + (baseLine ? baseLine : -1 * yy));
         return w >= (int16_t)ww;

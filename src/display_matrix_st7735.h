@@ -171,6 +171,10 @@ class DisplayMatrixST7735 : public MuppletGfxDisplay {
         }
     }
 
+    virtual void setTextColor(uint16_t fg, uint16_t bg) {
+        display.setTextColor(fg, bg);
+    }
+
     virtual void getCursor(int16_t &x, int16_t &y) {
         x = display.getCursorX();
         y = display.getCursorY();
@@ -200,8 +204,11 @@ class DisplayMatrixST7735 : public MuppletGfxDisplay {
                                uint8_t font, uint16_t color, uint16_t bg) {
         display.setFont(fonts[font]);
         display.setTextColor(color, bg);
-        return display.printFormatted(x, y, w, align, content, sizes[font].baseLine,
-                                      sizes[font].yAdvance);
+        bool ret = display.printFormatted(x, y, w, align, content, sizes[font].baseLine,
+                                          sizes[font].yAdvance);
+        display.setTextColor(current_fg, current_bg);
+        display.setFont(fonts[current_font]);
+        return ret;
     }
 
 #ifdef USTD_FEATURE_PROGRAMPLAYER
