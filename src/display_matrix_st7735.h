@@ -50,7 +50,8 @@ class DisplayMatrixST7735 : public MuppletGfxDisplay {
     DisplayMatrixST7735(String name, uint8_t hardware, uint8_t rotation, uint8_t csPin,
                         uint8_t dcPin, uint8_t rsPin = -1, uint8_t blPin = -1,
                         bool blActiveLogic = false, uint8_t blChannel = 0)
-        : MuppletGfxDisplay(name), display(csPin, dcPin, rsPin, hardware, rotation), blPin(blPin),
+        : MuppletGfxDisplay(name, MUPDISP_FEATURE_COLOR),
+          display(csPin, dcPin, rsPin, hardware, rotation), blPin(blPin),
           blActiveLogic(blActiveLogic), blChannel(blChannel) {
         current_bg = ST7735_BLACK;
         current_fg = ST7735_WHITE;

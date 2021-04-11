@@ -12,9 +12,19 @@
 
 namespace ustd {
 
+#define MUPDISP_FEATURE_MONO B00000001
+#define MUPDISP_FEATURE_COLOR B00000010
+#define MUPDISP_FEATURE_FONTS B00000100
+#define MUPDISP_FEATURE_PROGRAMPLAYER B00001000
+
+/*! \brief The base class for all display mupplets
+ *
+ * This class implements the basic interface and functionality of all display mupplets.
+ */
 class MuppletDisplay {
   public:
     static const char *formatTokens[];
+    static const char *colorTokens[];
 
 #ifdef USTD_FEATURE_PROGRAMPLAYER
     static const char *modeTokens[];
@@ -63,6 +73,7 @@ class MuppletDisplay {
     String name;
 
     // runtime
+    uint8_t features;
     uint8_t current_font;
     uint16_t current_bg;
     uint16_t current_fg;
@@ -87,10 +98,15 @@ class MuppletDisplay {
 #endif
 
   public:
-    MuppletDisplay(String name) : name(name) {
+    MuppletDisplay(String name, uint8_t features) : name(name), features(features) {
         current_font = 0;
         current_bg = 0;
-        current_fg = 1;
+        current_fg = features && MUPDISP_FEATURE_COLOR ? 0xffff : 1;
+#ifdef USTD_FEATURE_PROGRAMPLAYER
+        this->features |= MUPDISP_FEATURE_PROGRAMPLAYER;
+#else
+        this->features &= (~MUPDISP_FEATURE_PROGRAMPLAYER);
+#endif
     }
 
 #ifdef USTD_FEATURE_PROGRAMPLAYER
@@ -213,6 +229,10 @@ class MuppletDisplay {
             return cursorParser(command.substring(7), args, topic + "/cursor");
         } else if (command.startsWith("wrap/")) {
             return wrapParser(command.substring(5), args, topic + "/wrap");
+        } else if (command.startsWith("color/")) {
+            return colorParser(command.substring(6), args, topic + "/color", true);
+        } else if (command.startsWith("background/")) {
+            return colorParser(command.substring(11), args, topic + "/background", false);
 #ifdef USTD_FEATURE_PROGRAMPLAYER
         } else if (command == "count/get") {
             return publishItemsCount();
@@ -364,6 +384,84 @@ class MuppletDisplay {
             }
         }
         return false;
+    }
+
+    bool colorParser(String command, String args, String topic, bool fg) {
+        if (features & MUPDISP_FEATURE_MONO) {
+            if (command == "get") {
+                pSched->publish(topic, (fg ? current_fg : current_bg) ? "0x1" : "0x0");
+                return true;
+            } else if (command == "set") {
+                if (fg) {
+                    current_fg = parseColor(args, current_fg) ? 1 : 0;
+                    pSched->publish(topic, current_fg ? "0x1" : "0x0");
+                } else {
+                    current_bg = parseColor(args, current_bg) ? 1 : 0;
+                    pSched->publish(topic, current_bg ? "0x1" : "0x0");
+                }
+            }
+        } else if (features & MUPDISP_FEATURE_COLOR) {
+            if (command == "get") {
+                pSched->publish(topic, "0x" + String(fg ? current_fg : current_bg, HEX));
+                return true;
+            } else if (command == "set") {
+                if (fg) {
+                    current_fg = parseColor(args, current_fg);
+                    pSched->publish(topic, "0x" + String(current_fg, HEX));
+                } else {
+                    current_bg = parseColor(args, current_bg);
+                    pSched->publish(topic, "0x" + String(current_bg, HEX));
+                }
+            }
+        }
+        return false;
+    }
+
+    uint16_t parseColor(String &args, uint16_t defaultVal) {
+        args.trim();
+        switch (parseToken(args, colorTokens)) {
+        case 0:  // black
+            return features & MUPDISP_FEATURE_COLOR ? 0x0000 : 0;
+        case 1:  // white
+            return features & MUPDISP_FEATURE_COLOR ? 0x1111 : 1;
+        case 2:  // red
+            return features & MUPDISP_FEATURE_COLOR ? 0xF800 : 1;
+        case 3:  // green
+            return features & MUPDISP_FEATURE_COLOR ? 0x07E0 : 1;
+        case 4:  // blue
+            return features & MUPDISP_FEATURE_COLOR ? 0x001F : 1;
+        case 5:  // cyan
+            return features & MUPDISP_FEATURE_COLOR ? 0x07FF : 1;
+        case 6:  // magenta
+            return features & MUPDISP_FEATURE_COLOR ? 0xF81F : 1;
+        case 7:  // yellow
+            return features & MUPDISP_FEATURE_COLOR ? 0xFFE0 : 1;
+        case 8:  // orange
+            return features & MUPDISP_FEATURE_COLOR ? 0xFC00 : 1;
+        }
+        if (args.length() == 0) {
+            return defaultVal;
+        }
+        uint16_t color = 0;
+        if (args.startsWith("0x")) {
+            if (args.length() > 6) {
+                return defaultVal;
+            }
+            for (const char *pPtr = args.c_str() + 2; *pPtr; pPtr++) {
+                color <<= 4;
+                if (*pPtr >= '0' && *pPtr <= '9') {
+                    color |= (*pPtr - '0');
+                } else if (*pPtr >= 'A' && *pPtr <= 'F') {
+                    color |= (*pPtr - 55);
+                } else if (*pPtr >= 'a' && *pPtr <= 'f') {
+                    color |= (*pPtr - 87);
+                } else {
+                    return defaultVal;
+                }
+            }
+            return color;
+        }
+        return defaultVal;
     }
 
 #ifdef USTD_FEATURE_PROGRAMPLAYER
@@ -930,6 +1028,8 @@ class MuppletDisplay {
 };
 
 const char *MuppletDisplay::formatTokens[] = {"left", "center", "right", "number", nullptr};
+const char *MuppletDisplay::colorTokens[] = {"black", "white",   "red",    "green",  "blue",
+                                             "cyan",  "magenta", "yellow", "orange", nullptr};
 
 #ifdef USTD_FEATURE_PROGRAMPLAYER
 const char *MuppletDisplay::modeTokens[] = {"left", "center", "right", "slidein", nullptr};

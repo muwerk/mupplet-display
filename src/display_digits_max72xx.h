@@ -33,7 +33,7 @@ class DisplayDigitsMAX72XX : public MuppletDisplay {
      */
     DisplayDigitsMAX72XX(String name, uint8_t csPin, uint8_t hDisplays = 1, uint8_t vDisplays = 1,
                          uint8_t length = 8)
-        : MuppletDisplay(name), display(csPin, hDisplays, vDisplays, length) {
+        : MuppletDisplay(name, 0), display(csPin, hDisplays, vDisplays, length) {
     }
 
     /*! Initialize the display hardware and start operation

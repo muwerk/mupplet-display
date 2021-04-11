@@ -127,8 +127,30 @@ The following properties can be set or retrieved:
 * `display/y/cursor` - The y cursor position
 * `display/wrap` - The text wrap mode (`on`, `off`, `true`, `false`,)
 * `display/font` - The current font index (numerical value starting at 0)
+* `display/color` - The current text color
+* `display/background` - The current text background
 
-TBD....
+For color-capable displays, colors are represented as unsigned 16-bit values. The primary color
+components — red, green and blue — are all “packed” into a single 16-bit variable, with the most
+significant 5 bits conveying red, middle 6 bits conveying green, and least significant 5 bits
+conveying blue. That extra bit is assigned to green because our eyes are most sensitive to green
+light.
+
+Colors are always returned as a hexadecimal number in `0xdddd` notation. This notation must also
+be used when specifying colors in addition to the following predefined names:
+
+Color Name  | Value
+----------- | ----------------------------
+`black`     | `0x0000`
+`white`     | `0xffff`
+`red`       | `0xf800`
+`green`     | `0x07e0`
+`blue`      | `0x001f`
+`cyan`      | `0x07ff`
+`magenta`   | `0xf81f`
+`yellow`    | `0xffe0`
+`orange`    | `0xfc00`
+
 
 Examples:
 ````
@@ -137,6 +159,12 @@ RECV> <mupplet-name>/display/cursor 0;7
 
 SEND> <mupplet-name>/display/font/set 1
 RECV> <mupplet-name>/display/font 1
+
+SEND> <mupplet-name>/display/color/set orange
+RECV> <mupplet-name>/display/color 0xfc00
+
+SEND> <mupplet-name>/display/backgroun/set 0x0000
+RECV> <mupplet-name>/display/color 0x0
 ````
 
 The following commands can be issued:
@@ -202,6 +230,17 @@ Prints <content> starting at <x>,<y>
 #### format ####
 
 TBD...
+
+
+The builtin default values are:
+Value Name  | Value
+----------- | ----------------------------
+`x`         | `0`
+`y`         | `0`
+`mode`      | `left`
+`width`     | Width of the display
+
+
 
 ````
 SEND> <mupplet-name>/display/cmnd/format <x>;<y>;<align>;<len>;<content>

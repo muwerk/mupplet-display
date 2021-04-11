@@ -65,7 +65,8 @@ class DisplayMatrixMAX72XX : public MuppletGfxDisplay {
      */
     DisplayMatrixMAX72XX(String name, uint8_t csPin, uint8_t hDisplays = 1, uint8_t vDisplays = 1,
                          uint8_t rotation = 0)
-        : MuppletGfxDisplay(name), display(csPin, hDisplays, vDisplays, rotation) {
+        : MuppletGfxDisplay(name, MUPDISP_FEATURE_MONO),
+          display(csPin, hDisplays, vDisplays, rotation) {
     }
 
     /*! Initialize the display hardware and start operation

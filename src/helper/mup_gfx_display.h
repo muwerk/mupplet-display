@@ -7,6 +7,10 @@
 
 namespace ustd {
 
+/*! \brief The base class for all matrix display mupplets
+ *
+ * This class implements the basic interface and functionality of all matrix display mupplets.
+ */
 class MuppletGfxDisplay : public MuppletDisplay {
   protected:
     // runtime
@@ -15,10 +19,12 @@ class MuppletGfxDisplay : public MuppletDisplay {
     array<FontSize> sizes;
 
   public:
-    MuppletGfxDisplay(String name) : MuppletDisplay(name), fonts(4, ARRAY_MAX_SIZE, 4) {
+    MuppletGfxDisplay(String name, uint8_t features)
+        : MuppletDisplay(name, features), fonts(4, ARRAY_MAX_SIZE, 4) {
         FontSize default_size = {0, 6, 8, 0};
         fonts.add(default_font);
         sizes.add(default_size);
+        this->features |= MUPDISP_FEATURE_FONTS;
     }
 
     /*! Adds an Adafruit GFX font to the display mupplet

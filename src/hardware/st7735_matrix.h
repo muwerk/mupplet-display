@@ -119,9 +119,10 @@ class St7735Matrix : public Adafruit_ST7735 {
      */
     bool printFormatted(int16_t x, int16_t y, int16_t w, int16_t align, String content,
                         uint8_t baseLine, uint8_t yAdvance = 0) {
-        bool old_wrap = wrap;
         int16_t xx = 0, yy = 0;
         uint16_t ww = 0, hh = 0;
+        bool old_wrap = wrap;
+        wrap = false;
         getTextBounds(content, 0, 0, &xx, &yy, &ww, &hh);
         wrap = old_wrap;
 
@@ -140,7 +141,7 @@ class St7735Matrix : public Adafruit_ST7735 {
             xx = w - ww;
             break;
         }
-        if (yAdvance && ww % yAdvance) {
+        if (yAdvance && (hh % yAdvance)) {
             hh = ((hh / yAdvance) + 1) * yAdvance;
         }
         GFXcanvas16 tmp(w, hh);
