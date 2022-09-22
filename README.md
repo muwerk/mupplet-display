@@ -32,6 +32,17 @@ The `mupplet-display` library consists of the following modules:
   Sitronix ST7735 color single-chip TFT controller. See
   [DisplayMatrixST7735 Application Notes][DisplayMatrixST7735_NOTES]
 
+Sensor value visualization (number & plots):
+
+<img src="https://github.com/muwerk/mupplet-sensor/blob/master/extras/oled.png" align="right" width="7%" height="7%">
+
+<img src="https://github.com/muwerk/mupplet-sensor/blob/master/extras/tft.gif" align="right" width="20%" height="20%">
+
+* [mup_gfx_panel][Gfx_panel_DOC] The `GfxPanel` mupplet allows to display multiple sensor
+  values on an Oled or TFT displays as text or graphical plot. The values displayed can
+  either be generated locally or imported via MQTT. A JSON file describes
+  format and data sources. See [GFX Panel Application Notes][Gfx_panel_NOTES].
+  `GfxPanel` is a special-purpose display-mupplet for easy sensor-value visualization.
 
 
 Dependencies
@@ -52,6 +63,11 @@ Mupplet                     | Type   | Luminosity | Chainable | Templates | Pres
 `display_matrix_max72xx.h`  | Matrix | Dimmable   | Up to 16  |           |           |      1 | 8x8 led matrix modules driven by a MAX7219 or MAX7221 | [Adafruit GFX Library][2], [Adafruit BusIO][1], Wire, SPI
 `display_matrix_st7735.h`   | Matrix | Backlight  | No        |           |           |  65536 | Various TFT display modules driven by a ST7735 | [Adafruit ST7735 and ST7789 Library][3], [Adafruit GFX Library][2], [Adafruit BusIO][1], Wire, SPI
 
+Additionally, a special-purpose module is available for easy sensor-value visualization as number or plot:
+
+| Mupplet                     | Function | Hardware | Dependencies    |
+| --------------------------- | -------- | -------- | --------------- |
+| `mup_gfx_panel` | Oled or TFT display for sensor values and plots | SSD1306, ST7735 | Wire, SPI, Adafruit BusIO, Adafruit GFX Library, Adafruit SSD1306, Adafruit ST7735 and ST7789 Library |
 
 Message Programming Interface
 -----------------------------
@@ -260,6 +276,7 @@ TBD....
 History
 -------
 
+- 0.2.0 (2022-09-22) GfxPanel added (formely resided in mupplet-sensor)
 - 0.1.0 (2021-02-21) Single Line Matrix Display Module based on MAX72XX driver
 
 More mupplet libraries
@@ -287,6 +304,8 @@ References
 [DisplayMatrixMAX72XX_NOTES]: https://github.com/muwerk/mupplet-display/blob/master/extras/display-matrix-notes.md
 [DisplayMatrixST7735_DOC]: https://www.lipsum.com/
 [DisplayMatrixST7735_NOTES]: https://www.lipsum.com/
+[Gfx_panel_DOC]: https://muwerk.github.io/mupplet-sensor/docs/classustd_1_1GfxPanel.html
+[Gfx_panel_NOTES]: https://github.com/muwerk/mupplet-sensor/blob/master/extras/gfx-panel-notes.md
 
 [gh_ustd]: https://github.com/muwerk/ustd
 [gh_muwerk]: https://github.com/muwerk/muwerk

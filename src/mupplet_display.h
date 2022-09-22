@@ -16,6 +16,10 @@ Additionally there are implementation for the following hardware driver classes:
 * * \ref ustd::Max72xxMatrix
 * * \ref ustd::Max72xxDigits
 
+Sensor value display and plot:
+
+* * \ref ustd::GfxPanel
+
 For an overview, see:
 <a href="https://github.com/muwerk/mupplet-display/blob/master/README.md">mupplet-display readme</a>
 
