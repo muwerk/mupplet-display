@@ -18,6 +18,10 @@ The name of the json file is determined by the name of the instance of the muppl
 
 ## Example Oled
 
+<img src="https://github.com/muwerk/mupplet-display/blob/master/extras/oled.png" align="right">
+
+* [mup_gfx_panel][Gfx_panel_DOC] The `GfxPanel` mupplet allows to display multiple sensor
+
 See [gfxPanel example](https://github.com/muwerk/mupplet-sensor/blob/master/examples/platformio_gfx_panel/src/gfxPanel.cpp) for the source.
 
 ```cpp
@@ -31,6 +35,8 @@ This Display will look for a json file `display1.json`. A sample content could b
     "topics": ["sensor/data1", "sensor/data1", "sensor/data2"],
     "captions": ["Data 1 _N", "Data 1 _N", "(will be set dyn.)"],
 ```
+
+<img src="https://github.com/muwerk/mupplet-display/blob/master/extras/tft.gif" align="right" width="20%" height="20%">
 
 - **`layout`** defines the slots that are available to display information. Each slot is described by a single letter, and `|` marks
   a new line. An upper-case letter defines a large 64x32 slot, lower-case is used for 32x32 slots.
