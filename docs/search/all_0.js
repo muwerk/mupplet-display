@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['addfont_0',['addfont',['../classustd_1_1DisplayMatrixMAX72XX.html#adeb4f1b39db829c34660fc7e890a711f',1,'ustd::DisplayMatrixMAX72XX::addfont(const GFXfont *font, uint8_t baseLine)'],['../classustd_1_1DisplayMatrixMAX72XX.html#ad0a5be07d0527678eb1bea8bdbd8f3f7',1,'ustd::DisplayMatrixMAX72XX::addfont(const GFXfont *font, const char *baseLineReference=&quot;A&quot;)']]]
+  ['addfont_0',['addfont',['../classustd_1_1MuppletGfxDisplay.html#a4aea4521cdb3855dc1ef099c8303f998',1,'ustd::MuppletGfxDisplay::addfont(const GFXfont *font, uint8_t baseLine)'],['../classustd_1_1MuppletGfxDisplay.html#a6ad25076a8f624c72ff38f198e6d0fd2',1,'ustd::MuppletGfxDisplay::addfont(const GFXfont *font, const char *baseLineReference=&quot;A&quot;)']]]
 ];

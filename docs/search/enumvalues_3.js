@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['left_78',['Left',['../classustd_1_1DisplayMatrixMAX72XX.html#aa83672a8f6a82ea7eb9c83a3e6f92dc8aa0da1acb1ca312cef098d16d33644946',1,'ustd::DisplayMatrixMAX72XX']]]
+  ['scanlimit_0',['scanlimit',['../classustd_1_1Max72XX.html#a088b2177d58815fcfb7d30d7710ecc26a835d00868535e0750f60b238bd7ad472',1,'ustd::Max72XX']]],
+  ['shutdown_1',['shutdown',['../classustd_1_1Max72XX.html#a088b2177d58815fcfb7d30d7710ecc26a2e949209e511af97675386b05e53fb6f',1,'ustd::Max72XX']]]
 ];

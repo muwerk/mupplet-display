@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['mode_64',['Mode',['../classustd_1_1DisplayMatrixMAX72XX.html#aa83672a8f6a82ea7eb9c83a3e6f92dc8',1,'ustd::DisplayMatrixMAX72XX']]]
+  ['op_0',['OP',['../classustd_1_1Max72XX.html#a088b2177d58815fcfb7d30d7710ecc26',1,'ustd::Max72XX']]]
 ];

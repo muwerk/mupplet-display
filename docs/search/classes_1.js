@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['max72xx_43',['Max72XX',['../classustd_1_1Max72XX.html',1,'ustd']]],
-  ['max72xxmatrix_44',['Max72xxMatrix',['../classustd_1_1Max72xxMatrix.html',1,'ustd']]]
+  ['gfxpanel_0',['GfxPanel',['../classustd_1_1GfxPanel.html',1,'ustd']]]
 ];
