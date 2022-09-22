@@ -58,6 +58,16 @@ class Max72XX {
         SPI.begin();
     }
 
+    /*! Get the number of devices in the chain
+     * @return The number ofdevices in the chain
+     */
+    inline uint8_t getChainLen() const {
+        return chainLen;
+    }
+
+    /*! Sets the BCD code B (0-9, E, H, L, P, and -) or no-decode operation for each digit
+     * @param mode The bitmask specifying the decode mode for each digit.
+     */
     inline void setDecodeMode(uint8_t mode) {
         sendCommand(OP::decodemode, mode);
     }
@@ -69,8 +79,11 @@ class Max72XX {
         sendCommand(OP::intensity, intensity > 15 ? 15 : intensity);
     }
 
+    /*! The scan-limit register sets how many digits are displayed, from 1 to 8
+     * @param scanLimit Number of digits to show from 1 to 8
+     */
     inline void setScanLimit(uint8_t scanlimit) {
-        sendCommand(OP::scanlimit, scanlimit);
+        sendCommand(OP::scanlimit, scanlimit - 1);
     }
 
     /*! Set the power saving mode for all devices
