@@ -276,7 +276,7 @@ TBD....
 History
 -------
 
-- 0.2.0 (2022-09-22) GfxPanel added (formely resided in mupplet-sensor)
+- 0.2.0 (2022-09-23) GfxPanel added (formely resided in mupplet-sensor)
 - 0.1.0 (2021-02-21) Single Line Matrix Display Module based on MAX72XX driver
 
 More mupplet libraries
