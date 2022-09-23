@@ -34,9 +34,9 @@ The `mupplet-display` library consists of the following modules:
 
 Sensor value visualization (number & plots):
 
-<img src="https://github.com/muwerk/mupplet-sensor/blob/master/extras/oled.png" align="right" width="7%" height="7%">
+<img src="https://github.com/muwerk/mupplet-display/blob/master/extras/oled.png" align="right" width="7%" height="7%">
 
-<img src="https://github.com/muwerk/mupplet-sensor/blob/master/extras/tft.gif" align="right" width="20%" height="20%">
+<img src="https://github.com/muwerk/mupplet-display/blob/master/extras/tft.gif" align="right" width="20%" height="20%">
 
 * [mup_gfx_panel][Gfx_panel_DOC] The `GfxPanel` mupplet allows to display multiple sensor
   values on an Oled or TFT displays as text or graphical plot. The values displayed can
@@ -276,7 +276,7 @@ TBD....
 History
 -------
 
-- 0.2.0 (2022-09-22) GfxPanel added (formely resided in mupplet-sensor)
+- 0.2.0 (2022-09-23) GfxPanel added (formely resided in mupplet-sensor)
 - 0.1.0 (2021-02-21) Single Line Matrix Display Module based on MAX72XX driver
 
 More mupplet libraries
@@ -304,8 +304,8 @@ References
 [DisplayMatrixMAX72XX_NOTES]: https://github.com/muwerk/mupplet-display/blob/master/extras/display-matrix-notes.md
 [DisplayMatrixST7735_DOC]: https://www.lipsum.com/
 [DisplayMatrixST7735_NOTES]: https://www.lipsum.com/
-[Gfx_panel_DOC]: https://muwerk.github.io/mupplet-sensor/docs/classustd_1_1GfxPanel.html
-[Gfx_panel_NOTES]: https://github.com/muwerk/mupplet-sensor/blob/master/extras/gfx-panel-notes.md
+[Gfx_panel_DOC]: https://muwerk.github.io/mupplet-display/docs/classustd_1_1GfxPanel.html
+[Gfx_panel_NOTES]: https://github.com/muwerk/mupplet-display/blob/master/extras/gfx-panel-notes.md
 
 [gh_ustd]: https://github.com/muwerk/ustd
 [gh_muwerk]: https://github.com/muwerk/muwerk

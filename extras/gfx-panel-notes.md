@@ -7,7 +7,7 @@ The `mup_gfx_panel` mupplet displays sensor values as numbers or plots. Supporte
 * Oled SSD1306 128x64
 * TFT ST7735 128x128, 128x160
 
-<img src="https://github.com/muwerk/mupplet-sensor/blob/master/extras/oled.gif" align="right">
+<img src="https://github.com/muwerk/mupplet-display/blob/master/extras/oled.gif" align="right">
 
 The display is divded into slots of either 32x32 or 64x32 pixels. Each slot can either display
 a short string, a number or a graphical plot. Data source for the values displayed are pub/sub
@@ -18,7 +18,9 @@ The name of the json file is determined by the name of the instance of the muppl
 
 ## Example Oled
 
-See [gfxPanel example](https://github.com/muwerk/mupplet-sensor/blob/master/examples/platformio_gfx_panel/src/gfxPanel.cpp) for the source.
+* [mup_gfx_panel][Gfx_panel_DOC] The `GfxPanel` mupplet allows to display multiple sensor
+
+See [gfxPanel example](https://github.com/muwerk/mupplet-display/blob/master/examples/platformio_gfx_panel/src/gfxPanel.cpp) for the source.
 
 ```cpp
 ustd::GfxPanel displayOled("display1", ustd::GfxDrivers::DisplayType::SSD1306, 128,64, 0x3c, &Wire);
@@ -41,7 +43,7 @@ This Display will look for a json file `display1.json`. A sample content could b
   
   Possible letter codes for the layout (e.g. `layout="dg|G"`) are:
   
-<img src="https://github.com/muwerk/mupplet-sensor/blob/master/extras/tft.gif" align="right">
+<img src="https://github.com/muwerk/mupplet-display/blob/master/extras/tft.gif" align="right" width="20%" height="20%">
 
   - `S`: simply display content of MQTT message as string.
   - `I`: display MQTT converted to integer.
